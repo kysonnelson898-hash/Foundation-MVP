@@ -111,6 +111,7 @@ export async function createTask(
   projectId: string,
   title: string,
   description?: string,
+  dueDate?: string,
 ) {
   return apiRequest(
     `/projects/${projectId}/tasks`,
@@ -119,6 +120,7 @@ export async function createTask(
       body: JSON.stringify({
         title,
         description,
+        dueDate,
       }),
     },
   );
@@ -139,6 +141,7 @@ export async function updateTask(
     completed?: boolean;
     title?: string;
     description?: string;
+    dueDate?: string;
   },
 ) {
   return apiRequest(

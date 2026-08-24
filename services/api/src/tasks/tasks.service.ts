@@ -9,21 +9,26 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+  ) {}
 
   async create(
     userId: string,
     projectId: string,
     createTaskDto: CreateTaskDto,
   ) {
-    const project = await this.prisma.project.findUnique({
-      where: {
-        id: projectId,
-      },
-    });
+    const project =
+      await this.prisma.project.findUnique({
+        where: {
+          id: projectId,
+        },
+      });
 
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw new NotFoundException(
+        'Project not found',
+      );
     }
 
     if (project.ownerId !== userId) {
@@ -35,7 +40,11 @@ export class TasksService {
     return this.prisma.task.create({
       data: {
         title: createTaskDto.title,
-        description: createTaskDto.description,
+        description:
+          createTaskDto.description,
+        dueDate: createTaskDto.dueDate
+          ? new Date(createTaskDto.dueDate)
+          : null,
         projectId,
       },
     });
@@ -68,9 +77,17 @@ export class TasksService {
       where: {
         projectId,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [
+        {
+          completed: 'asc',
+        },
+        {
+          dueDate: 'asc',
+        },
+        {
+          createdAt: 'desc',
+        },
+      ],
     });
   }
 
@@ -132,6 +149,16 @@ export class TasksService {
           undefined && {
           description:
             updateTaskDto.description,
+        }),
+
+        ...(updateTaskDto.dueDate !==
+          undefined && {
+          dueDate:
+            updateTaskDto.dueDate === ''
+              ? null
+              : new Date(
+                  updateTaskDto.dueDate,
+                ),
         }),
       },
     });

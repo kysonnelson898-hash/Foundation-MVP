@@ -26,6 +26,7 @@ type Task = {
   title: string;
   description: string | null;
   completed: boolean;
+  dueDate: string | null;
   createdAt: string;
   updatedAt?: string;
   projectId: string;
@@ -45,6 +46,7 @@ export default function ProjectPage({
   const [title, setTitle] = useState('');
   const [description, setDescription] =
     useState('');
+  const [dueDate, setDueDate] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] =
@@ -60,6 +62,9 @@ export default function ProjectPage({
     useState('');
 
   const [editingDescription, setEditingDescription] =
+    useState('');
+
+  const [editingDueDate, setEditingDueDate] =
     useState('');
 
   const [error, setError] = useState('');
@@ -126,6 +131,7 @@ export default function ProjectPage({
         projectId,
         title.trim(),
         description.trim() || undefined,
+        dueDate || undefined,
       );
 
       setTasks((current) => [
@@ -135,6 +141,7 @@ export default function ProjectPage({
 
       setTitle('');
       setDescription('');
+      setDueDate('');
     } catch (err) {
       setError(
         err instanceof Error
@@ -183,6 +190,15 @@ export default function ProjectPage({
     setEditingDescription(
       task.description ?? '',
     );
+
+    setEditingDueDate(
+      task.dueDate
+        ? new Date(task.dueDate)
+            .toISOString()
+            .slice(0, 10)
+        : '',
+    );
+
     setError('');
   }
 
@@ -190,6 +206,7 @@ export default function ProjectPage({
     setEditingTaskId('');
     setEditingTitle('');
     setEditingDescription('');
+    setEditingDueDate('');
   }
 
   async function saveTask(task: Task) {
@@ -209,6 +226,8 @@ export default function ProjectPage({
           title: editingTitle.trim(),
           description:
             editingDescription.trim(),
+          dueDate:
+            editingDueDate || '',
         },
       );
 
@@ -268,6 +287,36 @@ export default function ProjectPage({
 
   function goBack() {
     window.location.href = '/';
+  }
+
+  function formatDueDate(
+    value: string | null,
+  ) {
+    if (!value) {
+      return null;
+    }
+
+    return new Date(value).toLocaleDateString(
+      undefined,
+      {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      },
+    );
+  }
+
+  function isOverdue(task: Task) {
+    if (!task.dueDate || task.completed) {
+      return false;
+    }
+
+    const due = new Date(task.dueDate);
+    const now = new Date();
+
+    due.setHours(23, 59, 59, 999);
+
+    return due < now;
   }
 
   if (loading) {
@@ -393,6 +442,27 @@ export default function ProjectPage({
                   />
                 </div>
 
+                <div>
+                  <label
+                    htmlFor="dueDate"
+                    className="mb-1 block text-sm font-semibold text-zinc-800"
+                  >
+                    Due date
+                  </label>
+
+                  <input
+                    id="dueDate"
+                    type="date"
+                    value={dueDate}
+                    onChange={(event) =>
+                      setDueDate(
+                        event.target.value,
+                      )
+                    }
+                    className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+
                 <button
                   type="submit"
                   disabled={creating}
@@ -440,6 +510,14 @@ export default function ProjectPage({
                     const editing =
                       editingTaskId ===
                       task.id;
+
+                    const formattedDueDate =
+                      formatDueDate(
+                        task.dueDate,
+                      );
+
+                    const overdue =
+                      isOverdue(task);
 
                     return (
                       <div
@@ -496,6 +574,44 @@ export default function ProjectPage({
                                 rows={3}
                                 className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                               />
+                            </div>
+
+                            <div>
+                              <label
+                                htmlFor={`edit-due-date-${task.id}`}
+                                className="mb-1 block text-sm font-semibold text-zinc-800"
+                              >
+                                Due date
+                              </label>
+
+                              <input
+                                id={`edit-due-date-${task.id}`}
+                                type="date"
+                                value={
+                                  editingDueDate
+                                }
+                                onChange={(event) =>
+                                  setEditingDueDate(
+                                    event.target
+                                      .value,
+                                  )
+                                }
+                                className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                              />
+
+                              {editingDueDate && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setEditingDueDate(
+                                      '',
+                                    )
+                                  }
+                                  className="mt-2 text-xs font-medium text-zinc-500 hover:text-red-600"
+                                >
+                                  Clear due date
+                                </button>
+                              )}
                             </div>
 
                             <div className="flex gap-3">
@@ -561,12 +677,33 @@ export default function ProjectPage({
                                 </p>
                               )}
 
-                              <p className="mt-3 text-xs font-medium text-zinc-500">
-                                Created{' '}
-                                {new Date(
-                                  task.createdAt,
-                                ).toLocaleDateString()}
-                              </p>
+                              <div className="mt-3 flex flex-wrap items-center gap-2">
+                                {formattedDueDate && (
+                                  <span
+                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                      overdue
+                                        ? 'bg-red-50 text-red-600'
+                                        : task.completed
+                                          ? 'bg-zinc-100 text-zinc-500'
+                                          : 'bg-blue-50 text-blue-700'
+                                    }`}
+                                  >
+                                    {overdue
+                                      ? 'Overdue · '
+                                      : 'Due · '}
+                                    {
+                                      formattedDueDate
+                                    }
+                                  </span>
+                                )}
+
+                                <span className="text-xs font-medium text-zinc-500">
+                                  Created{' '}
+                                  {new Date(
+                                    task.createdAt,
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
                             </div>
 
                             <div className="flex shrink-0 items-center gap-2">
