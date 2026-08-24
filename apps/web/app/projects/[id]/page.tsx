@@ -1,12 +1,17 @@
-
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
 import {
+  FormEvent,
+  useEffect,
+  useState,
+} from 'react';
+
+import {
+  createTask,
+  deleteTask,
   getProject,
   getTasks,
   updateTask,
-  createTask,
 } from '../../../lib/api';
 
 type Project = {
@@ -22,6 +27,8 @@ type Task = {
   description: string | null;
   completed: boolean;
   createdAt: string;
+  updatedAt?: string;
+  projectId: string;
 };
 
 export default function ProjectPage({
@@ -30,13 +37,22 @@ export default function ProjectPage({
   params: Promise<{ id: string }>;
 }) {
   const [projectId, setProjectId] = useState('');
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, setProject] =
+    useState<Project | null>(null);
+
   const [tasks, setTasks] = useState<Task[]>([]);
+
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] =
+    useState('');
+
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [updatingTaskId, setUpdatingTaskId] = useState('');
+  const [creating, setCreating] =
+    useState(false);
+
+  const [updatingTaskId, setUpdatingTaskId] =
+    useState('');
+
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -46,20 +62,22 @@ export default function ProjectPage({
 
         setProjectId(id);
 
-        const token = localStorage.getItem('accessToken');
+        const token =
+          localStorage.getItem('accessToken');
 
         if (!token) {
           window.location.href = '/login';
           return;
         }
 
-        const [projectData, taskData] = await Promise.all([
-          getProject(id),
-          getTasks(id),
-        ]);
+        const [projectData, tasksData] =
+          await Promise.all([
+            getProject(id),
+            getTasks(id),
+          ]);
 
         setProject(projectData);
-        setTasks(taskData);
+        setTasks(tasksData);
       } catch (err) {
         setError(
           err instanceof Error
@@ -74,12 +92,20 @@ export default function ProjectPage({
     loadProject();
   }, [params]);
 
-  async function handleCreateTask(
+  async function createNewTask(
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
     if (!title.trim()) {
+      return;
+    }
+
+    const token =
+      localStorage.getItem('accessToken');
+
+    if (!token) {
+      window.location.href = '/login';
       return;
     }
 
@@ -93,7 +119,10 @@ export default function ProjectPage({
         description.trim() || undefined,
       );
 
-      setTasks((current) => [newTask, ...current]);
+      setTasks((current) => [
+        newTask,
+        ...current,
+      ]);
 
       setTitle('');
       setDescription('');
@@ -137,6 +166,40 @@ export default function ProjectPage({
     }
   }
 
+  async function removeTask(task: Task) {
+    const confirmed = window.confirm(
+      `Delete "${task.title}"? This cannot be undone.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setUpdatingTaskId(task.id);
+    setError('');
+
+    try {
+      await deleteTask(
+        projectId,
+        task.id,
+      );
+
+      setTasks((current) =>
+        current.filter(
+          (item) => item.id !== task.id,
+        ),
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to delete task',
+      );
+    } finally {
+      setUpdatingTaskId('');
+    }
+  }
+
   function goBack() {
     window.location.href = '/';
   }
@@ -158,18 +221,19 @@ export default function ProjectPage({
   if (!project) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white">
-        <div className="rounded-2xl border border-blue-100 bg-white p-10 text-center shadow-lg">
-          <h1 className="bg-gradient-to-r from-zinc-950 via-blue-900 to-blue-600 bg-clip-text text-2xl font-bold text-transparent">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-zinc-900">
             Project not found
           </h1>
 
-          <p className="mt-2 text-zinc-600">
-            {error || 'This project could not be found.'}
+          <p className="mt-2 text-zinc-500">
+            {error ||
+              'This project could not be found.'}
           </p>
 
           <button
             onClick={goBack}
-            className="mt-5 rounded-lg bg-gradient-to-r from-blue-700 to-blue-500 px-5 py-3 font-medium text-white shadow-lg shadow-blue-500/20"
+            className="mt-5 rounded-lg bg-black px-5 py-3 font-medium text-white transition hover:bg-zinc-800"
           >
             Back to Projects
           </button>
@@ -179,216 +243,215 @@ export default function ProjectPage({
   }
 
   return (
-    <main className="min-h-screen bg-white bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(147,197,253,0.10),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.10),transparent_35%)] text-zinc-900">
+    <main className="min-h-screen bg-white">
+      <div className="min-h-screen border-t-4 border-blue-200 bg-gradient-to-b from-blue-50/60 via-white to-white">
+        <header className="border-b border-blue-100/80 bg-white/90 shadow-[0_4px_20px_rgba(59,130,246,0.06)] backdrop-blur">
+          <div className="mx-auto max-w-6xl px-6 py-6">
+            <button
+              onClick={goBack}
+              className="mb-5 text-sm font-medium text-zinc-500 transition hover:text-blue-600"
+            >
+              ← Back to projects
+            </button>
 
-      <header className="border-b border-blue-100/70 bg-white/90 shadow-[0_1px_20px_rgba(59,130,246,0.08)] backdrop-blur-xl">
-        <div className="mx-auto max-w-6xl px-6 py-6">
+            <h1 className="bg-gradient-to-r from-zinc-950 via-blue-800 to-blue-500 bg-clip-text text-3xl font-bold text-transparent">
+              {project.name}
+            </h1>
 
-          <button
-            onClick={goBack}
-            className="mb-5 text-sm font-medium text-zinc-600 transition hover:text-blue-700"
-          >
-            ← Back to projects
-          </button>
-
-          <h1 className="bg-gradient-to-r from-zinc-950 via-blue-900 to-blue-600 bg-clip-text text-4xl font-bold tracking-tight text-transparent">
-            {project.name}
-          </h1>
-
-          <p className="mt-3 max-w-2xl text-zinc-700">
-            {project.description ||
-              'No project description provided.'}
-          </p>
-
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-6xl px-6 py-10">
-
-        {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 shadow-sm">
-            {error}
+            <p className="mt-2 text-zinc-600">
+              {project.description ||
+                'No project description provided.'}
+            </p>
           </div>
-        )}
+        </header>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <section className="mx-auto max-w-6xl px-6 py-10">
+          {error && (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+              {error}
+            </div>
+          )}
 
-          <div className="rounded-2xl border border-blue-100 bg-white/90 p-6 shadow-[0_8px_30px_rgba(59,130,246,0.08)] backdrop-blur-sm">
-
-            <div className="mb-6">
-              <h2 className="bg-gradient-to-r from-zinc-950 to-blue-700 bg-clip-text text-2xl font-bold text-transparent">
+          <div className="grid gap-8 lg:grid-cols-3">
+            <div className="rounded-2xl border border-blue-100/80 bg-white/95 p-6 shadow-[0_8px_30px_rgba(59,130,246,0.08)]">
+              <h2 className="mb-5 bg-gradient-to-r from-zinc-950 to-blue-700 bg-clip-text text-xl font-bold text-transparent">
                 Add Task
               </h2>
 
-              <p className="mt-1 text-sm text-zinc-600">
-                Add a new task to this project.
-              </p>
+              <form
+                onSubmit={createNewTask}
+                className="space-y-4"
+              >
+                <div>
+                  <label
+                    htmlFor="title"
+                    className="mb-1 block text-sm font-semibold text-zinc-800"
+                  >
+                    Task title
+                  </label>
+
+                  <input
+                    id="title"
+                    type="text"
+                    value={title}
+                    onChange={(event) =>
+                      setTitle(
+                        event.target.value,
+                      )
+                    }
+                    placeholder="Build login page"
+                    required
+                    className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="description"
+                    className="mb-1 block text-sm font-semibold text-zinc-800"
+                  >
+                    Description
+                  </label>
+
+                  <textarea
+                    id="description"
+                    value={description}
+                    onChange={(event) =>
+                      setDescription(
+                        event.target.value,
+                      )
+                    }
+                    placeholder="Describe the task..."
+                    rows={4}
+                    className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="w-full rounded-xl bg-gradient-to-r from-blue-700 to-blue-500 px-5 py-3 font-semibold text-white shadow-[0_6px_18px_rgba(37,99,235,0.22)] transition hover:from-blue-800 hover:to-blue-600 disabled:cursor-wait disabled:opacity-50"
+                >
+                  {creating
+                    ? 'Creating...'
+                    : 'Create Task'}
+                </button>
+              </form>
             </div>
 
-            <form
-              onSubmit={handleCreateTask}
-              className="space-y-5"
-            >
-
-              <div>
-                <label
-                  htmlFor="title"
-                  className="mb-2 block text-sm font-semibold text-zinc-800"
-                >
-                  Task title
-                </label>
-
-                <input
-                  id="title"
-                  type="text"
-                  value={title}
-                  onChange={(event) =>
-                    setTitle(event.target.value)
-                  }
-                  placeholder="Build login page"
-                  required
-                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="description"
-                  className="mb-2 block text-sm font-semibold text-zinc-800"
-                >
-                  Description
-                </label>
-
-                <textarea
-                  id="description"
-                  value={description}
-                  onChange={(event) =>
-                    setDescription(event.target.value)
-                  }
-                  placeholder="Describe the task..."
-                  rows={4}
-                  className="w-full resize-none rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={creating}
-                className="w-full rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 disabled:opacity-50"
-              >
-                {creating
-                  ? 'Creating...'
-                  : 'Create Task'}
-              </button>
-
-            </form>
-          </div>
-
-          <div className="lg:col-span-2">
-
-            <div className="mb-6 flex items-center justify-between">
-
-              <div>
-                <h2 className="bg-gradient-to-r from-zinc-950 via-blue-900 to-blue-600 bg-clip-text text-2xl font-bold text-transparent">
+            <div className="lg:col-span-2">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="bg-gradient-to-r from-zinc-950 to-blue-700 bg-clip-text text-xl font-bold text-transparent">
                   Tasks
                 </h2>
 
-                <p className="mt-1 text-sm text-zinc-600">
-                  Manage tasks for this project.
-                </p>
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+                  {tasks.length} task
+                  {tasks.length === 1
+                    ? ''
+                    : 's'}
+                </span>
               </div>
 
-              <span className="rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm">
-                {tasks.length} task
-                {tasks.length === 1 ? '' : 's'}
-              </span>
+              {tasks.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-blue-200 bg-white p-10 text-center shadow-sm">
+                  <h3 className="font-semibold text-zinc-900">
+                    No tasks yet
+                  </h3>
 
-            </div>
+                  <p className="mt-2 text-sm text-zinc-500">
+                    Create your first task for
+                    this project.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {tasks.map((task) => {
+                    const updating =
+                      updatingTaskId ===
+                      task.id;
 
-            {tasks.length === 0 ? (
+                    return (
+                      <div
+                        key={task.id}
+                        className={`rounded-2xl border border-blue-100/80 bg-white/95 p-5 shadow-[0_6px_24px_rgba(59,130,246,0.07)] transition ${
+                          updating
+                            ? 'opacity-70'
+                            : 'hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(59,130,246,0.12)]'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <input
+                            type="checkbox"
+                            checked={
+                              task.completed
+                            }
+                            disabled={updating}
+                            onChange={() =>
+                              toggleTask(
+                                task,
+                              )
+                            }
+                            className="mt-1 h-5 w-5 cursor-pointer accent-blue-600 disabled:cursor-wait"
+                          />
 
-              <div className="rounded-2xl border border-dashed border-blue-200 bg-white/80 p-10 text-center shadow-sm">
-                <h3 className="font-semibold text-zinc-900">
-                  No tasks yet
-                </h3>
+                          <div className="min-w-0 flex-1">
+                            <h3
+                              className={`text-lg font-semibold ${
+                                task.completed
+                                  ? 'text-zinc-400 line-through'
+                                  : 'text-zinc-900'
+                              }`}
+                            >
+                              {task.title}
+                            </h3>
 
-                <p className="mt-2 text-sm text-zinc-600">
-                  Create your first task for this project.
-                </p>
-              </div>
+                            {task.description && (
+                              <p className="mt-2 text-sm leading-6 text-zinc-700">
+                                {
+                                  task.description
+                                }
+                              </p>
+                            )}
 
-            ) : (
+                            <p className="mt-3 text-xs font-medium text-zinc-500">
+                              Created{' '}
+                              {new Date(
+                                task.createdAt,
+                              ).toLocaleDateString()}
+                            </p>
+                          </div>
 
-              <div className="space-y-4">
+                          <div className="flex shrink-0 items-center gap-3">
+                            {updating && (
+                              <span className="text-xs font-medium text-blue-600">
+                                Saving...
+                              </span>
+                            )}
 
-                {tasks.map((task) => (
-
-                  <div
-                    key={task.id}
-                    className="rounded-2xl border border-blue-100/80 bg-white/95 p-5 shadow-[0_6px_24px_rgba(59,130,246,0.07)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(59,130,246,0.12)]"
-                  >
-
-                    <div className="flex items-start gap-4">
-
-                      <input
-                        type="checkbox"
-                        checked={task.completed}
-                        disabled={
-                          updatingTaskId === task.id
-                        }
-                        onChange={() =>
-                          toggleTask(task)
-                        }
-                        className="mt-1 h-5 w-5 cursor-pointer accent-blue-600 disabled:cursor-wait"
-                      />
-
-                      <div className="flex-1">
-
-                        <h3
-                          className={`text-lg font-semibold ${
-                            task.completed
-                              ? 'text-zinc-400 line-through'
-                              : 'text-zinc-900'
-                          }`}
-                        >
-                          {task.title}
-                        </h3>
-
-                        {task.description && (
-                          <p className="mt-2 text-sm leading-6 text-zinc-700">
-                            {task.description}
-                          </p>
-                        )}
-
-                        <p className="mt-3 text-xs font-medium text-zinc-500">
-                          Created{' '}
-                          {new Date(
-                            task.createdAt,
-                          ).toLocaleDateString()}
-                        </p>
-
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removeTask(
+                                  task,
+                                )
+                              }
+                              disabled={updating}
+                              className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
                       </div>
-
-                      {updatingTaskId === task.id && (
-                        <span className="text-xs font-medium text-blue-600">
-                          Saving...
-                        </span>
-                      )}
-
-                    </div>
-                  </div>
-
-                ))}
-
-              </div>
-
-            )}
-
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
   );
 }
-
-

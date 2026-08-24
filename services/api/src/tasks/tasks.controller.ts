@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -54,6 +55,19 @@ export class TasksController {
       projectId,
       taskId,
       updateTaskDto,
+    );
+  }
+
+  @Delete(':taskId')
+  remove(
+    @Request() request: { user: { id: string } },
+    @Param('projectId') projectId: string,
+    @Param('taskId') taskId: string,
+  ) {
+    return this.tasksService.remove(
+      request.user.id,
+      projectId,
+      taskId,
     );
   }
 }

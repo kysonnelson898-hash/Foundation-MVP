@@ -42,7 +42,10 @@ export async function login(
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({
+      email,
+      password,
+    }),
   });
 
   const data = await response.json();
@@ -66,12 +69,34 @@ export async function getProjects() {
   return apiRequest('/projects');
 }
 
-export async function getProject(projectId: string) {
-  return apiRequest(`/projects/${projectId}`);
+export async function getProject(
+  projectId: string,
+) {
+  const projects = await getProjects();
+
+  const project = projects.find(
+    (item: { id: string }) =>
+      item.id === projectId,
+  );
+
+  if (!project) {
+    throw new Error('Project not found');
+  }
+
+  return project;
 }
 
-export async function getTasks(projectId: string) {
-  return apiRequest(`/projects/${projectId}/tasks`);
+export async function createProject(
+  name: string,
+  description?: string,
+) {
+  return apiRequest('/projects', {
+    method: 'POST',
+    body: JSON.stringify({
+      name,
+      description,
+    }),
+  });
 }
 
 export async function createTask(
@@ -79,13 +104,24 @@ export async function createTask(
   title: string,
   description?: string,
 ) {
-  return apiRequest(`/projects/${projectId}/tasks`, {
-    method: 'POST',
-    body: JSON.stringify({
-      title,
-      description,
-    }),
-  });
+  return apiRequest(
+    `/projects/${projectId}/tasks`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        title,
+        description,
+      }),
+    },
+  );
+}
+
+export async function getTasks(
+  projectId: string,
+) {
+  return apiRequest(
+    `/projects/${projectId}/tasks`,
+  );
 }
 
 export async function updateTask(
@@ -104,15 +140,14 @@ export async function updateTask(
   );
 }
 
-export async function createProject(
-  name: string,
-  description?: string,
+export async function deleteTask(
+  projectId: string,
+  taskId: string,
 ) {
-  return apiRequest('/projects', {
-    method: 'POST',
-    body: JSON.stringify({
-      name,
-      description,
-    }),
-  });
+  return apiRequest(
+    `/projects/${projectId}/tasks/${taskId}`,
+    {
+      method: 'DELETE',
+    },
+  );
 }

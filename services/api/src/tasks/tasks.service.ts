@@ -109,4 +109,46 @@ export class TasksService {
       },
     });
   }
+
+  async remove(
+    userId: string,
+    projectId: string,
+    taskId: string,
+  ) {
+    const project = await this.prisma.project.findUnique({
+      where: {
+        id: projectId,
+      },
+    });
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    if (project.ownerId !== userId) {
+      throw new ForbiddenException(
+        'You do not have access to this project',
+      );
+    }
+
+    const task = await this.prisma.task.findUnique({
+      where: {
+        id: taskId,
+      },
+    });
+
+    if (!task || task.projectId !== projectId) {
+      throw new NotFoundException('Task not found');
+    }
+
+    await this.prisma.task.delete({
+      where: {
+        id: taskId,
+      },
+    });
+
+    return {
+      message: 'Task deleted successfully',
+    };
+  }
 }
