@@ -1,6 +1,42 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-export async function login(email: string, password: string) {
+async function apiRequest(
+  path: string,
+  options: RequestInit = {},
+) {
+  const token = localStorage.getItem('accessToken');
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {}),
+      ...(options.headers ?? {}),
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      Array.isArray(data.message)
+        ? data.message.join(', ')
+        : data.message ?? 'Request failed',
+    );
+  }
+
+  return data;
+}
+
+export async function login(
+  email: string,
+  password: string,
+) {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: {
@@ -20,4 +56,63 @@ export async function login(email: string, password: string) {
   }
 
   return data;
+}
+
+export async function getMe() {
+  return apiRequest('/auth/me');
+}
+
+export async function getProjects() {
+  return apiRequest('/projects');
+}
+
+export async function getProject(projectId: string) {
+  return apiRequest(`/projects/${projectId}`);
+}
+
+export async function getTasks(projectId: string) {
+  return apiRequest(`/projects/${projectId}/tasks`);
+}
+
+export async function createTask(
+  projectId: string,
+  title: string,
+  description?: string,
+) {
+  return apiRequest(`/projects/${projectId}/tasks`, {
+    method: 'POST',
+    body: JSON.stringify({
+      title,
+      description,
+    }),
+  });
+}
+
+export async function updateTask(
+  projectId: string,
+  taskId: string,
+  completed: boolean,
+) {
+  return apiRequest(
+    `/projects/${projectId}/tasks/${taskId}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        completed,
+      }),
+    },
+  );
+}
+
+export async function createProject(
+  name: string,
+  description?: string,
+) {
+  return apiRequest('/projects', {
+    method: 'POST',
+    body: JSON.stringify({
+      name,
+      description,
+    }),
+  });
 }
