@@ -41,15 +41,21 @@ export class TasksService {
     });
   }
 
-  async findAll(userId: string, projectId: string) {
-    const project = await this.prisma.project.findUnique({
-      where: {
-        id: projectId,
-      },
-    });
+  async findAll(
+    userId: string,
+    projectId: string,
+  ) {
+    const project =
+      await this.prisma.project.findUnique({
+        where: {
+          id: projectId,
+        },
+      });
 
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw new NotFoundException(
+        'Project not found',
+      );
     }
 
     if (project.ownerId !== userId) {
@@ -74,14 +80,17 @@ export class TasksService {
     taskId: string,
     updateTaskDto: UpdateTaskDto,
   ) {
-    const project = await this.prisma.project.findUnique({
-      where: {
-        id: projectId,
-      },
-    });
+    const project =
+      await this.prisma.project.findUnique({
+        where: {
+          id: projectId,
+        },
+      });
 
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw new NotFoundException(
+        'Project not found',
+      );
     }
 
     if (project.ownerId !== userId) {
@@ -90,14 +99,17 @@ export class TasksService {
       );
     }
 
-    const task = await this.prisma.task.findUnique({
-      where: {
-        id: taskId,
-      },
-    });
+    const task =
+      await this.prisma.task.findUnique({
+        where: {
+          id: taskId,
+        },
+      });
 
     if (!task || task.projectId !== projectId) {
-      throw new NotFoundException('Task not found');
+      throw new NotFoundException(
+        'Task not found',
+      );
     }
 
     return this.prisma.task.update({
@@ -105,7 +117,22 @@ export class TasksService {
         id: taskId,
       },
       data: {
-        completed: updateTaskDto.completed,
+        ...(updateTaskDto.completed !==
+          undefined && {
+          completed:
+            updateTaskDto.completed,
+        }),
+
+        ...(updateTaskDto.title !==
+          undefined && {
+          title: updateTaskDto.title,
+        }),
+
+        ...(updateTaskDto.description !==
+          undefined && {
+          description:
+            updateTaskDto.description,
+        }),
       },
     });
   }
@@ -115,14 +142,17 @@ export class TasksService {
     projectId: string,
     taskId: string,
   ) {
-    const project = await this.prisma.project.findUnique({
-      where: {
-        id: projectId,
-      },
-    });
+    const project =
+      await this.prisma.project.findUnique({
+        where: {
+          id: projectId,
+        },
+      });
 
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw new NotFoundException(
+        'Project not found',
+      );
     }
 
     if (project.ownerId !== userId) {
@@ -131,14 +161,17 @@ export class TasksService {
       );
     }
 
-    const task = await this.prisma.task.findUnique({
-      where: {
-        id: taskId,
-      },
-    });
+    const task =
+      await this.prisma.task.findUnique({
+        where: {
+          id: taskId,
+        },
+      });
 
     if (!task || task.projectId !== projectId) {
-      throw new NotFoundException('Task not found');
+      throw new NotFoundException(
+        'Task not found',
+      );
     }
 
     await this.prisma.task.delete({

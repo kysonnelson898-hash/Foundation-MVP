@@ -1,24 +1,29 @@
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+  process.env.NEXT_PUBLIC_API_URL ??
+  'http://localhost:3000';
 
 async function apiRequest(
   path: string,
   options: RequestInit = {},
 ) {
-  const token = localStorage.getItem('accessToken');
+  const token =
+    localStorage.getItem('accessToken');
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {}),
-      ...(options.headers ?? {}),
+  const response = await fetch(
+    `${API_URL}${path}`,
+    {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {}),
+        ...(options.headers ?? {}),
+      },
     },
-  });
+  );
 
   const data = await response.json();
 
@@ -37,16 +42,19 @@ export async function login(
   email: string,
   password: string,
 ) {
-  const response = await fetch(`${API_URL}/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  const response = await fetch(
+    `${API_URL}/auth/login`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     },
-    body: JSON.stringify({
-      email,
-      password,
-    }),
-  });
+  );
 
   const data = await response.json();
 
@@ -127,15 +135,17 @@ export async function getTasks(
 export async function updateTask(
   projectId: string,
   taskId: string,
-  completed: boolean,
+  data: {
+    completed?: boolean;
+    title?: string;
+    description?: string;
+  },
 ) {
   return apiRequest(
     `/projects/${projectId}/tasks/${taskId}`,
     {
       method: 'PATCH',
-      body: JSON.stringify({
-        completed,
-      }),
+      body: JSON.stringify(data),
     },
   );
 }

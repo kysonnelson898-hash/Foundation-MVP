@@ -53,6 +53,15 @@ export default function ProjectPage({
   const [updatingTaskId, setUpdatingTaskId] =
     useState('');
 
+  const [editingTaskId, setEditingTaskId] =
+    useState('');
+
+  const [editingTitle, setEditingTitle] =
+    useState('');
+
+  const [editingDescription, setEditingDescription] =
+    useState('');
+
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -145,7 +154,9 @@ export default function ProjectPage({
       const updatedTask = await updateTask(
         projectId,
         task.id,
-        !task.completed,
+        {
+          completed: !task.completed,
+        },
       );
 
       setTasks((current) =>
@@ -160,6 +171,61 @@ export default function ProjectPage({
         err instanceof Error
           ? err.message
           : 'Unable to update task',
+      );
+    } finally {
+      setUpdatingTaskId('');
+    }
+  }
+
+  function startEditing(task: Task) {
+    setEditingTaskId(task.id);
+    setEditingTitle(task.title);
+    setEditingDescription(
+      task.description ?? '',
+    );
+    setError('');
+  }
+
+  function cancelEditing() {
+    setEditingTaskId('');
+    setEditingTitle('');
+    setEditingDescription('');
+  }
+
+  async function saveTask(task: Task) {
+    if (!editingTitle.trim()) {
+      setError('Task title cannot be empty');
+      return;
+    }
+
+    setUpdatingTaskId(task.id);
+    setError('');
+
+    try {
+      const updatedTask = await updateTask(
+        projectId,
+        task.id,
+        {
+          title: editingTitle.trim(),
+          description:
+            editingDescription.trim(),
+        },
+      );
+
+      setTasks((current) =>
+        current.map((item) =>
+          item.id === updatedTask.id
+            ? updatedTask
+            : item,
+        ),
+      );
+
+      cancelEditing();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to save task',
       );
     } finally {
       setUpdatingTaskId('');
@@ -371,6 +437,10 @@ export default function ProjectPage({
                       updatingTaskId ===
                       task.id;
 
+                    const editing =
+                      editingTaskId ===
+                      task.id;
+
                     return (
                       <div
                         key={task.id}
@@ -380,69 +450,160 @@ export default function ProjectPage({
                             : 'hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(59,130,246,0.12)]'
                         }`}
                       >
-                        <div className="flex items-start gap-4">
-                          <input
-                            type="checkbox"
-                            checked={
-                              task.completed
-                            }
-                            disabled={updating}
-                            onChange={() =>
-                              toggleTask(
-                                task,
-                              )
-                            }
-                            className="mt-1 h-5 w-5 cursor-pointer accent-blue-600 disabled:cursor-wait"
-                          />
+                        {editing ? (
+                          <div className="space-y-4">
+                            <div>
+                              <label
+                                htmlFor={`edit-title-${task.id}`}
+                                className="mb-1 block text-sm font-semibold text-zinc-800"
+                              >
+                                Task title
+                              </label>
 
-                          <div className="min-w-0 flex-1">
-                            <h3
-                              className={`text-lg font-semibold ${
-                                task.completed
-                                  ? 'text-zinc-400 line-through'
-                                  : 'text-zinc-900'
-                              }`}
-                            >
-                              {task.title}
-                            </h3>
-
-                            {task.description && (
-                              <p className="mt-2 text-sm leading-6 text-zinc-700">
-                                {
-                                  task.description
+                              <input
+                                id={`edit-title-${task.id}`}
+                                type="text"
+                                value={editingTitle}
+                                onChange={(event) =>
+                                  setEditingTitle(
+                                    event.target
+                                      .value,
+                                  )
                                 }
-                              </p>
-                            )}
+                                className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                              />
+                            </div>
 
-                            <p className="mt-3 text-xs font-medium text-zinc-500">
-                              Created{' '}
-                              {new Date(
-                                task.createdAt,
-                              ).toLocaleDateString()}
-                            </p>
+                            <div>
+                              <label
+                                htmlFor={`edit-description-${task.id}`}
+                                className="mb-1 block text-sm font-semibold text-zinc-800"
+                              >
+                                Description
+                              </label>
+
+                              <textarea
+                                id={`edit-description-${task.id}`}
+                                value={
+                                  editingDescription
+                                }
+                                onChange={(event) =>
+                                  setEditingDescription(
+                                    event.target
+                                      .value,
+                                  )
+                                }
+                                rows={3}
+                                className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                              />
+                            </div>
+
+                            <div className="flex gap-3">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  saveTask(
+                                    task,
+                                  )
+                                }
+                                disabled={updating}
+                                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                              >
+                                {updating
+                                  ? 'Saving...'
+                                  : 'Save'}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={
+                                  cancelEditing
+                                }
+                                disabled={updating}
+                                className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
-
-                          <div className="flex shrink-0 items-center gap-3">
-                            {updating && (
-                              <span className="text-xs font-medium text-blue-600">
-                                Saving...
-                              </span>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                removeTask(
+                        ) : (
+                          <div className="flex items-start gap-4">
+                            <input
+                              type="checkbox"
+                              checked={
+                                task.completed
+                              }
+                              disabled={updating}
+                              onChange={() =>
+                                toggleTask(
                                   task,
                                 )
                               }
-                              disabled={updating}
-                              className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
-                            >
-                              Delete
-                            </button>
+                              className="mt-1 h-5 w-5 cursor-pointer accent-blue-600 disabled:cursor-wait"
+                            />
+
+                            <div className="min-w-0 flex-1">
+                              <h3
+                                className={`text-lg font-semibold ${
+                                  task.completed
+                                    ? 'text-zinc-400 line-through'
+                                    : 'text-zinc-900'
+                                }`}
+                              >
+                                {task.title}
+                              </h3>
+
+                              {task.description && (
+                                <p className="mt-2 text-sm leading-6 text-zinc-700">
+                                  {
+                                    task.description
+                                  }
+                                </p>
+                              )}
+
+                              <p className="mt-3 text-xs font-medium text-zinc-500">
+                                Created{' '}
+                                {new Date(
+                                  task.createdAt,
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-2">
+                              {updating && (
+                                <span className="text-xs font-medium text-blue-600">
+                                  Saving...
+                                </span>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  startEditing(
+                                    task,
+                                  )
+                                }
+                                disabled={updating}
+                                className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50 disabled:opacity-50"
+                              >
+                                Edit
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removeTask(
+                                    task,
+                                  )
+                                }
+                                disabled={updating}
+                                className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
