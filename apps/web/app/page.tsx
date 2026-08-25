@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   createProject,
+  deleteProject,
   getDashboard,
   getProjects,
+  updateProject,
 } from '../lib/api';
 
 type Project = {
@@ -26,31 +28,37 @@ type Dashboard = {
 };
 
 export default function DashboardPage() {
-  const [projects, setProjects] = useState<
-    Project[]
-  >([]);
-
+  const [projects, setProjects] = useState<Project[]>([]);
   const [dashboard, setDashboard] =
     useState<Dashboard | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [creating, setCreating] =
-    useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const [showCreateForm, setShowCreateForm] =
     useState(false);
 
+  const [creating, setCreating] = useState(false);
+
   const [projectName, setProjectName] =
     useState('');
 
-  const [
-    projectDescription,
-    setProjectDescription,
-  ] = useState('');
+  const [projectDescription, setProjectDescription] =
+    useState('');
 
-  const [error, setError] =
+  const [editingProjectId, setEditingProjectId] =
+    useState('');
+
+  const [editingName, setEditingName] =
+    useState('');
+
+  const [editingDescription, setEditingDescription] =
+    useState('');
+
+  const [updatingProjectId, setUpdatingProjectId] =
+    useState('');
+
+  const [deletingProjectId, setDeletingProjectId] =
     useState('');
 
   useEffect(() => {
@@ -93,15 +101,125 @@ export default function DashboardPage() {
     window.location.href = '/login';
   }
 
+  function startEditing(project: Project) {
+    setEditingProjectId(project.id);
+    setEditingName(project.name);
+    setEditingDescription(
+      project.description ?? '',
+    );
+    setError('');
+  }
+
+  function cancelEditing() {
+    setEditingProjectId('');
+    setEditingName('');
+    setEditingDescription('');
+  }
+
+  async function saveProject(projectId: string) {
+    if (!editingName.trim()) {
+      setError(
+        'Project name cannot be empty',
+      );
+      return;
+    }
+
+    setUpdatingProjectId(projectId);
+    setError('');
+
+    try {
+      const updatedProject =
+        await updateProject(
+          projectId,
+          {
+            name: editingName.trim(),
+            description:
+              editingDescription.trim(),
+          },
+        );
+
+      setProjects((current) =>
+        current.map((project) =>
+          project.id === projectId
+            ? updatedProject
+            : project,
+        ),
+      );
+
+      cancelEditing();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to update project',
+      );
+    } finally {
+      setUpdatingProjectId('');
+    }
+  }
+
+  async function handleDeleteProject(
+    project: Project,
+  ) {
+    const confirmed = window.confirm(
+      `Delete "${project.name}"? This will also delete its tasks.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingProjectId(project.id);
+    setError('');
+
+    try {
+      await deleteProject(project.id);
+
+      setProjects((current) =>
+        current.filter(
+          (item) =>
+            item.id !== project.id,
+        ),
+      );
+
+      setDashboard((current) =>
+        current
+          ? {
+              ...current,
+              projects:
+                Math.max(
+                  0,
+                  current.projects - 1,
+                ),
+            }
+          : current,
+      );
+
+      if (
+        editingProjectId === project.id
+      ) {
+        cancelEditing();
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to delete project',
+      );
+    } finally {
+      setDeletingProjectId('');
+    }
+  }
+
   async function handleCreateProject(
     event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
-    const name = projectName.trim();
-
-    if (!name) {
-      setError('Project name cannot be empty');
+    if (!projectName.trim()) {
+      setError(
+        'Project name cannot be empty',
+      );
       return;
     }
 
@@ -111,7 +229,7 @@ export default function DashboardPage() {
     try {
       const newProject =
         await createProject(
-          name,
+          projectName.trim(),
           projectDescription.trim() ||
             undefined,
         );
@@ -121,14 +239,19 @@ export default function DashboardPage() {
         ...current,
       ]);
 
+      setDashboard((current) =>
+        current
+          ? {
+              ...current,
+              projects:
+                current.projects + 1,
+            }
+          : current,
+      );
+
       setProjectName('');
       setProjectDescription('');
       setShowCreateForm(false);
-
-      const dashboardData =
-        await getDashboard();
-
-      setDashboard(dashboardData);
     } catch (err) {
       setError(
         err instanceof Error
@@ -138,13 +261,6 @@ export default function DashboardPage() {
     } finally {
       setCreating(false);
     }
-  }
-
-  function cancelCreateProject() {
-    setProjectName('');
-    setProjectDescription('');
-    setShowCreateForm(false);
-    setError('');
   }
 
   if (loading) {
@@ -172,6 +288,7 @@ export default function DashboardPage() {
           </div>
 
           <button
+            type="button"
             onClick={logout}
             className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-zinc-50"
           >
@@ -194,16 +311,15 @@ export default function DashboardPage() {
 
           <button
             type="button"
-            onClick={() => {
+            onClick={() =>
               setShowCreateForm(
                 (current) => !current,
-              );
-              setError('');
-            }}
-            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+              )
+            }
+            className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             {showCreateForm
-              ? 'Close'
+              ? 'Cancel'
               : '+ Create project'}
           </button>
         </div>
@@ -219,17 +335,11 @@ export default function DashboardPage() {
             onSubmit={handleCreateProject}
             className="mb-10 rounded-xl border bg-white p-6 shadow-sm"
           >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold">
-                Create a project
-              </h3>
+            <h3 className="text-xl font-semibold">
+              Create project
+            </h3>
 
-              <p className="mt-1 text-sm text-zinc-500">
-                Start a new project and add tasks to it.
-              </p>
-            </div>
-
-            <div className="grid gap-5">
+            <div className="mt-5 grid gap-5">
               <div>
                 <label
                   htmlFor="project-name"
@@ -247,10 +357,9 @@ export default function DashboardPage() {
                       event.target.value,
                     )
                   }
-                  placeholder="e.g. Website redesign"
+                  placeholder="My new project"
                   maxLength={100}
-                  autoFocus
-                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
@@ -270,30 +379,18 @@ export default function DashboardPage() {
                       event.target.value,
                     )
                   }
-                  placeholder="Describe what this project is about..."
-                  maxLength={2000}
+                  placeholder="Describe the project..."
+                  maxLength={1000}
                   rows={4}
-                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={cancelCreateProject}
-                  disabled={creating}
-                  className="rounded-lg border px-5 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-
+              <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={
-                    creating ||
-                    !projectName.trim()
-                  }
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={creating}
+                  className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {creating
                     ? 'Creating...'
@@ -348,39 +445,40 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {dashboard && dashboard.totalTasks > 0 && (
-          <div className="mb-10 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-zinc-500">
-                To do
-              </p>
+        {dashboard &&
+          dashboard.totalTasks > 0 && (
+            <div className="mb-10 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border bg-white p-5 shadow-sm">
+                <p className="text-sm font-medium text-zinc-500">
+                  To do
+                </p>
 
-              <p className="mt-2 text-2xl font-bold">
-                {dashboard.todoTasks}
-              </p>
+                <p className="mt-2 text-2xl font-bold">
+                  {dashboard.todoTasks}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-red-100 bg-white p-5 shadow-sm">
+                <p className="text-sm font-medium text-zinc-500">
+                  Overdue
+                </p>
+
+                <p className="mt-2 text-2xl font-bold text-red-600">
+                  {dashboard.overdueTasks}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-orange-100 bg-white p-5 shadow-sm">
+                <p className="text-sm font-medium text-zinc-500">
+                  High priority
+                </p>
+
+                <p className="mt-2 text-2xl font-bold text-orange-600">
+                  {dashboard.highPriorityTasks}
+                </p>
+              </div>
             </div>
-
-            <div className="rounded-xl border border-red-100 bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-zinc-500">
-                Overdue
-              </p>
-
-              <p className="mt-2 text-2xl font-bold text-red-600">
-                {dashboard.overdueTasks}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-orange-100 bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-zinc-500">
-                High priority
-              </p>
-
-              <p className="mt-2 text-2xl font-bold text-orange-600">
-                {dashboard.highPriorityTasks}
-              </p>
-            </div>
-          </div>
-        )}
+          )}
 
         <div className="mb-8">
           <h2 className="text-2xl font-bold">
@@ -401,40 +499,163 @@ export default function DashboardPage() {
             <p className="mt-2 text-sm text-zinc-500">
               Create your first project to get started.
             </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowCreateForm(true);
-                setError('');
-              }}
-              className="mt-5 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              Create your first project
-            </button>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
-              <Link
-                key={project.id}
-                href={`/projects/${project.id}`}
-                className="block rounded-xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-              >
-                <h3 className="text-xl font-semibold">
-                  {project.name}
-                </h3>
+            {projects.map((project) => {
+              const editing =
+                editingProjectId ===
+                project.id;
 
-                <p className="mt-2 min-h-12 text-sm text-zinc-500">
-                  {project.description ||
-                    'No project description provided.'}
-                </p>
+              const deleting =
+                deletingProjectId ===
+                project.id;
 
-                <div className="mt-6 text-sm font-medium text-blue-600">
-                  View project →
+              const updating =
+                updatingProjectId ===
+                project.id;
+
+              if (editing) {
+                return (
+                  <div
+                    key={project.id}
+                    className="rounded-xl border border-blue-200 bg-white p-6 shadow-sm"
+                  >
+                    <h3 className="text-xl font-semibold">
+                      Edit project
+                    </h3>
+
+                    <div className="mt-5">
+                      <label
+                        htmlFor={`edit-project-name-${project.id}`}
+                        className="mb-1 block text-sm font-semibold text-zinc-800"
+                      >
+                        Project name
+                      </label>
+
+                      <input
+                        id={`edit-project-name-${project.id}`}
+                        type="text"
+                        value={editingName}
+                        onChange={(event) =>
+                          setEditingName(
+                            event.target
+                              .value,
+                          )
+                        }
+                        maxLength={100}
+                        className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div className="mt-4">
+                      <label
+                        htmlFor={`edit-project-description-${project.id}`}
+                        className="mb-1 block text-sm font-semibold text-zinc-800"
+                      >
+                        Description
+                      </label>
+
+                      <textarea
+                        id={`edit-project-description-${project.id}`}
+                        value={
+                          editingDescription
+                        }
+                        onChange={(event) =>
+                          setEditingDescription(
+                            event.target
+                              .value,
+                          )
+                        }
+                        rows={4}
+                        maxLength={1000}
+                        className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          saveProject(
+                            project.id,
+                          )
+                        }
+                        disabled={updating}
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {updating
+                          ? 'Saving...'
+                          : 'Save changes'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={
+                          cancelEditing
+                        }
+                        disabled={updating}
+                        className="rounded-lg border px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={project.id}
+                  className="rounded-xl border bg-white p-6 shadow-sm transition hover:shadow-md"
+                >
+                  <h3 className="text-xl font-semibold">
+                    {project.name}
+                  </h3>
+
+                  <p className="mt-2 min-h-12 text-sm text-zinc-500">
+                    {project.description ||
+                      'No project description provided.'}
+                  </p>
+
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    <Link
+                      href={`/projects/${project.id}`}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                    >
+                      View project →
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        startEditing(
+                          project,
+                        )
+                      }
+                      className="rounded-lg border px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDeleteProject(
+                          project,
+                        )
+                      }
+                      disabled={deleting}
+                      className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {deleting
+                        ? 'Deleting...'
+                        : 'Delete'}
+                    </button>
+                  </div>
                 </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
