@@ -6,6 +6,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -35,13 +41,14 @@ model Project {
 }
 
 model Task {
-  id          String    @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
   description String?
-  completed   Boolean   @default(false)
+  completed   Boolean      @default(false)
+  priority    TaskPriority @default(MEDIUM)
   dueDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)

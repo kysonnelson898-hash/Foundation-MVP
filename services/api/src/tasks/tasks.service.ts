@@ -42,6 +42,8 @@ export class TasksService {
         title: createTaskDto.title,
         description:
           createTaskDto.description,
+        priority:
+          createTaskDto.priority ?? 'MEDIUM',
         dueDate: createTaskDto.dueDate
           ? new Date(createTaskDto.dueDate)
           : null,
@@ -149,6 +151,12 @@ export class TasksService {
           undefined && {
           description:
             updateTaskDto.description,
+        }),
+
+        ...(updateTaskDto.priority !==
+          undefined && {
+          priority:
+            updateTaskDto.priority,
         }),
 
         ...(updateTaskDto.dueDate !==

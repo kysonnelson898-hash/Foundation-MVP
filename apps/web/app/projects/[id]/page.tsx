@@ -26,6 +26,7 @@ type Task = {
   title: string;
   description: string | null;
   completed: boolean;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
   dueDate: string | null;
   createdAt: string;
   updatedAt?: string;
@@ -47,6 +48,10 @@ export default function ProjectPage({
   const [description, setDescription] =
     useState('');
   const [dueDate, setDueDate] = useState('');
+  const [priority, setPriority] =
+    useState<'LOW' | 'MEDIUM' | 'HIGH'>(
+      'MEDIUM',
+    );
 
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] =
@@ -66,6 +71,11 @@ export default function ProjectPage({
 
   const [editingDueDate, setEditingDueDate] =
     useState('');
+
+  const [editingPriority, setEditingPriority] =
+    useState<'LOW' | 'MEDIUM' | 'HIGH'>(
+      'MEDIUM',
+    );
 
   const [error, setError] = useState('');
 
@@ -132,6 +142,7 @@ export default function ProjectPage({
         title.trim(),
         description.trim() || undefined,
         dueDate || undefined,
+        priority,
       );
 
       setTasks((current) => [
@@ -142,6 +153,7 @@ export default function ProjectPage({
       setTitle('');
       setDescription('');
       setDueDate('');
+      setPriority('MEDIUM');
     } catch (err) {
       setError(
         err instanceof Error
@@ -199,6 +211,8 @@ export default function ProjectPage({
         : '',
     );
 
+    setEditingPriority(task.priority);
+
     setError('');
   }
 
@@ -207,6 +221,7 @@ export default function ProjectPage({
     setEditingTitle('');
     setEditingDescription('');
     setEditingDueDate('');
+    setEditingPriority('MEDIUM');
   }
 
   async function saveTask(task: Task) {
@@ -228,6 +243,7 @@ export default function ProjectPage({
             editingDescription.trim(),
           dueDate:
             editingDueDate || '',
+          priority: editingPriority,
         },
       );
 
@@ -317,6 +333,34 @@ export default function ProjectPage({
     due.setHours(23, 59, 59, 999);
 
     return due < now;
+  }
+
+  function priorityLabel(
+    value: 'LOW' | 'MEDIUM' | 'HIGH',
+  ) {
+    if (value === 'HIGH') {
+      return 'High';
+    }
+
+    if (value === 'LOW') {
+      return 'Low';
+    }
+
+    return 'Medium';
+  }
+
+  function priorityClass(
+    value: 'LOW' | 'MEDIUM' | 'HIGH',
+  ) {
+    if (value === 'HIGH') {
+      return 'bg-red-50 text-red-700';
+    }
+
+    if (value === 'LOW') {
+      return 'bg-zinc-100 text-zinc-600';
+    }
+
+    return 'bg-amber-50 text-amber-700';
   }
 
   if (loading) {
@@ -440,6 +484,39 @@ export default function ProjectPage({
                     rows={4}
                     className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                   />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="priority"
+                    className="mb-1 block text-sm font-semibold text-zinc-800"
+                  >
+                    Priority
+                  </label>
+
+                  <select
+                    id="priority"
+                    value={priority}
+                    onChange={(event) =>
+                      setPriority(
+                        event.target.value as
+                          | 'LOW'
+                          | 'MEDIUM'
+                          | 'HIGH',
+                      )
+                    }
+                    className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="LOW">
+                      Low
+                    </option>
+                    <option value="MEDIUM">
+                      Medium
+                    </option>
+                    <option value="HIGH">
+                      High
+                    </option>
+                  </select>
                 </div>
 
                 <div>
@@ -578,6 +655,42 @@ export default function ProjectPage({
 
                             <div>
                               <label
+                                htmlFor={`edit-priority-${task.id}`}
+                                className="mb-1 block text-sm font-semibold text-zinc-800"
+                              >
+                                Priority
+                              </label>
+
+                              <select
+                                id={`edit-priority-${task.id}`}
+                                value={
+                                  editingPriority
+                                }
+                                onChange={(event) =>
+                                  setEditingPriority(
+                                    event.target
+                                      .value as
+                                      | 'LOW'
+                                      | 'MEDIUM'
+                                      | 'HIGH',
+                                  )
+                                }
+                                className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                              >
+                                <option value="LOW">
+                                  Low
+                                </option>
+                                <option value="MEDIUM">
+                                  Medium
+                                </option>
+                                <option value="HIGH">
+                                  High
+                                </option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label
                                 htmlFor={`edit-due-date-${task.id}`}
                                 className="mb-1 block text-sm font-semibold text-zinc-800"
                               >
@@ -659,15 +772,27 @@ export default function ProjectPage({
                             />
 
                             <div className="min-w-0 flex-1">
-                              <h3
-                                className={`text-lg font-semibold ${
-                                  task.completed
-                                    ? 'text-zinc-400 line-through'
-                                    : 'text-zinc-900'
-                                }`}
-                              >
-                                {task.title}
-                              </h3>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3
+                                  className={`text-lg font-semibold ${
+                                    task.completed
+                                      ? 'text-zinc-400 line-through'
+                                      : 'text-zinc-900'
+                                  }`}
+                                >
+                                  {task.title}
+                                </h3>
+
+                                <span
+                                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${priorityClass(
+                                    task.priority,
+                                  )}`}
+                                >
+                                  {priorityLabel(
+                                    task.priority,
+                                  )}
+                                </span>
+                              </div>
 
                               {task.description && (
                                 <p className="mt-2 text-sm leading-6 text-zinc-700">

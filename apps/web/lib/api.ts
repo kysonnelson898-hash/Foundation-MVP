@@ -112,6 +112,7 @@ export async function createTask(
   title: string,
   description?: string,
   dueDate?: string,
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH',
 ) {
   return apiRequest(
     `/projects/${projectId}/tasks`,
@@ -121,6 +122,7 @@ export async function createTask(
         title,
         description,
         dueDate,
+        priority,
       }),
     },
   );
@@ -142,6 +144,7 @@ export async function updateTask(
     title?: string;
     description?: string;
     dueDate?: string;
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH';
   },
 ) {
   return apiRequest(
