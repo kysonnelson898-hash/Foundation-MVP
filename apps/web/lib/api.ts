@@ -84,18 +84,9 @@ export async function getDashboard() {
 export async function getProject(
   projectId: string,
 ) {
-  const projects = await getProjects();
-
-  const project = projects.find(
-    (item: { id: string }) =>
-      item.id === projectId,
+  return apiRequest(
+    `/projects/${projectId}`,
   );
-
-  if (!project) {
-    throw new Error('Project not found');
-  }
-
-  return project;
 }
 
 export async function createProject(
@@ -109,6 +100,33 @@ export async function createProject(
       description,
     }),
   });
+}
+
+export async function updateProject(
+  projectId: string,
+  data: {
+    name?: string;
+    description?: string;
+  },
+) {
+  return apiRequest(
+    `/projects/${projectId}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+export async function deleteProject(
+  projectId: string,
+) {
+  return apiRequest(
+    `/projects/${projectId}`,
+    {
+      method: 'DELETE',
+    },
+  );
 }
 
 export async function createTask(

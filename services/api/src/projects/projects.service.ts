@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -139,5 +140,53 @@ export class ProjectsService {
     }
 
     return project;
+  }
+
+  async update(
+    userId: string,
+    projectId: string,
+    updateProjectDto: UpdateProjectDto,
+  ) {
+    await this.findOne(
+      userId,
+      projectId,
+    );
+
+    return this.prisma.project.update({
+      where: {
+        id: projectId,
+      },
+      data: {
+        ...(updateProjectDto.name !==
+          undefined && {
+          name: updateProjectDto.name,
+        }),
+        ...(updateProjectDto.description !==
+          undefined && {
+          description:
+            updateProjectDto.description,
+        }),
+      },
+    });
+  }
+
+  async remove(
+    userId: string,
+    projectId: string,
+  ) {
+    await this.findOne(
+      userId,
+      projectId,
+    );
+
+    await this.prisma.project.delete({
+      where: {
+        id: projectId,
+      },
+    });
+
+    return {
+      message: 'Project deleted successfully',
+    };
   }
 }
