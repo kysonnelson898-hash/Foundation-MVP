@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
+  createProject,
   getDashboard,
   getProjects,
 } from '../lib/api';
@@ -34,6 +35,20 @@ export default function DashboardPage() {
 
   const [loading, setLoading] =
     useState(true);
+
+  const [creating, setCreating] =
+    useState(false);
+
+  const [showCreateForm, setShowCreateForm] =
+    useState(false);
+
+  const [projectName, setProjectName] =
+    useState('');
+
+  const [
+    projectDescription,
+    setProjectDescription,
+  ] = useState('');
 
   const [error, setError] =
     useState('');
@@ -78,6 +93,60 @@ export default function DashboardPage() {
     window.location.href = '/login';
   }
 
+  async function handleCreateProject(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    const name = projectName.trim();
+
+    if (!name) {
+      setError('Project name cannot be empty');
+      return;
+    }
+
+    setCreating(true);
+    setError('');
+
+    try {
+      const newProject =
+        await createProject(
+          name,
+          projectDescription.trim() ||
+            undefined,
+        );
+
+      setProjects((current) => [
+        newProject,
+        ...current,
+      ]);
+
+      setProjectName('');
+      setProjectDescription('');
+      setShowCreateForm(false);
+
+      const dashboardData =
+        await getDashboard();
+
+      setDashboard(dashboardData);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to create project',
+      );
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  function cancelCreateProject() {
+    setProjectName('');
+    setProjectDescription('');
+    setShowCreateForm(false);
+    setError('');
+  }
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-100">
@@ -112,20 +181,127 @@ export default function DashboardPage() {
       </header>
 
       <section className="mx-auto max-w-6xl px-6 py-10">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold">
-            Dashboard
-          </h2>
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-bold">
+              Dashboard
+            </h2>
 
-          <p className="mt-2 text-zinc-500">
-            See your projects and task progress at a glance.
-          </p>
+            <p className="mt-2 text-zinc-500">
+              See your projects and task progress at a glance.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowCreateForm(
+                (current) => !current,
+              );
+              setError('');
+            }}
+            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            {showCreateForm
+              ? 'Close'
+              : '+ Create project'}
+          </button>
         </div>
 
         {error && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
             {error}
           </div>
+        )}
+
+        {showCreateForm && (
+          <form
+            onSubmit={handleCreateProject}
+            className="mb-10 rounded-xl border bg-white p-6 shadow-sm"
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold">
+                Create a project
+              </h3>
+
+              <p className="mt-1 text-sm text-zinc-500">
+                Start a new project and add tasks to it.
+              </p>
+            </div>
+
+            <div className="grid gap-5">
+              <div>
+                <label
+                  htmlFor="project-name"
+                  className="mb-1 block text-sm font-semibold text-zinc-800"
+                >
+                  Project name
+                </label>
+
+                <input
+                  id="project-name"
+                  type="text"
+                  value={projectName}
+                  onChange={(event) =>
+                    setProjectName(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="e.g. Website redesign"
+                  maxLength={100}
+                  autoFocus
+                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="project-description"
+                  className="mb-1 block text-sm font-semibold text-zinc-800"
+                >
+                  Description
+                </label>
+
+                <textarea
+                  id="project-description"
+                  value={projectDescription}
+                  onChange={(event) =>
+                    setProjectDescription(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Describe what this project is about..."
+                  maxLength={2000}
+                  rows={4}
+                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={cancelCreateProject}
+                  disabled={creating}
+                  className="rounded-lg border px-5 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={
+                    creating ||
+                    !projectName.trim()
+                  }
+                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {creating
+                    ? 'Creating...'
+                    : 'Create project'}
+                </button>
+              </div>
+            </div>
+          </form>
         )}
 
         {dashboard && (
@@ -223,8 +399,19 @@ export default function DashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm text-zinc-500">
-              You do not have any projects yet.
+              Create your first project to get started.
             </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreateForm(true);
+                setError('');
+              }}
+              className="mt-5 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Create your first project
+            </button>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
