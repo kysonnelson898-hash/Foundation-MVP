@@ -13,6 +13,12 @@ enum TaskPriority {
   HIGH = 'HIGH',
 }
 
+enum TaskStatus {
+  TODO = 'TODO',
+  IN_PROGRESS = 'IN_PROGRESS',
+  DONE = 'DONE',
+}
+
 export class CreateTaskDto {
   @IsString()
   @MinLength(2)
@@ -31,5 +37,8 @@ export class CreateTaskDto {
   @IsOptional()
   @IsEnum(TaskPriority)
   priority?: TaskPriority;
-}
 
+  @IsOptional()
+  @IsEnum(TaskStatus)
+  status?: TaskStatus;
+}

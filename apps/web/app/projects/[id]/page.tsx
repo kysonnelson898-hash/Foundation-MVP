@@ -27,6 +27,7 @@ type Task = {
   title: string;
   description: string | null;
   completed: boolean;
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   dueDate: string | null;
   createdAt: string;
@@ -83,6 +84,11 @@ export default function ProjectPage({
       'MEDIUM',
     );
 
+  const [status, setStatus] =
+    useState<
+      'TODO' | 'IN_PROGRESS' | 'DONE'
+    >('TODO');
+
   const [loading, setLoading] =
     useState(true);
 
@@ -112,6 +118,13 @@ export default function ProjectPage({
   ] = useState<
     'LOW' | 'MEDIUM' | 'HIGH'
   >('MEDIUM');
+
+  const [
+    editingStatus,
+    setEditingStatus,
+  ] = useState<
+    'TODO' | 'IN_PROGRESS' | 'DONE'
+  >('TODO');
 
   const [error, setError] =
     useState('');
@@ -190,6 +203,7 @@ export default function ProjectPage({
             undefined,
           dueDate || undefined,
           priority,
+          status,
         );
 
       setTasks((current) => [
@@ -201,6 +215,7 @@ export default function ProjectPage({
       setDescription('');
       setDueDate('');
       setPriority('MEDIUM');
+      setStatus('TODO');
     } catch (err) {
       setError(
         err instanceof Error
@@ -268,6 +283,10 @@ export default function ProjectPage({
       task.priority,
     );
 
+    setEditingStatus(
+      task.status,
+    );
+
     setError('');
   }
 
@@ -277,6 +296,7 @@ export default function ProjectPage({
     setEditingDescription('');
     setEditingDueDate('');
     setEditingPriority('MEDIUM');
+    setEditingStatus('TODO');
   }
 
   async function saveTask(
@@ -746,6 +766,42 @@ export default function ProjectPage({
 
                 <div>
                   <label
+                    htmlFor="status"
+                    className="mb-1 block text-sm font-semibold text-zinc-800"
+                  >
+                    Status
+                  </label>
+
+                  <select
+                    id="status"
+                    value={status}
+                    onChange={(event) =>
+                      setStatus(
+                        event.target
+                          .value as
+                          | 'TODO'
+                          | 'IN_PROGRESS'
+                          | 'DONE',
+                      )
+                    }
+                    className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="TODO">
+                      To do
+                    </option>
+
+                    <option value="IN_PROGRESS">
+                      In progress
+                    </option>
+
+                    <option value="DONE">
+                      Done
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
                     htmlFor="dueDate"
                     className="mb-1 block text-sm font-semibold text-zinc-800"
                   >
@@ -1064,6 +1120,41 @@ export default function ProjectPage({
                                     Clear due date
                                   </button>
                                 )}
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor={`edit-status-${task.id}`}
+                                  className="mb-1 block text-sm font-semibold text-zinc-800"
+                                >
+                                  Status
+                                </label>
+
+                                <select
+                                  id={`edit-status-${task.id}`}
+                                  value={editingStatus}
+                                  onChange={(event) =>
+                                    setEditingStatus(
+                                      event.target.value as
+                                        | 'TODO'
+                                        | 'IN_PROGRESS'
+                                        | 'DONE',
+                                    )
+                                  }
+                                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                                >
+                                  <option value="TODO">
+                                    To do
+                                  </option>
+
+                                  <option value="IN_PROGRESS">
+                                    In progress
+                                  </option>
+
+                                  <option value="DONE">
+                                    Done
+                                  </option>
+                                </select>
                               </div>
 
                               <div className="flex gap-3">
