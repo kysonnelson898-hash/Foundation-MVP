@@ -192,3 +192,90 @@ export async function deleteTask(
     },
   );
 }
+
+/* =========================
+   Messaging
+========================= */
+
+export type MessageUser = {
+  id: string;
+  name: string | null;
+  email: string;
+};
+
+export type Message = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  readAt: string | null;
+  sender: MessageUser;
+};
+
+export type ConversationParticipant = {
+  id: string;
+  conversationId: string;
+  userId: string;
+  createdAt: string;
+  user: MessageUser;
+};
+
+export type Conversation = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  participants: ConversationParticipant[];
+  messages: Message[];
+};
+
+export async function getConversations() {
+  return apiRequest(
+    '/messages/conversations',
+  ) as Promise<Conversation[]>;
+}
+
+export async function createConversation(
+  userId: string,
+) {
+  return apiRequest(
+    `/messages/conversations/${userId}`,
+    {
+      method: 'POST',
+    },
+  ) as Promise<Conversation>;
+}
+
+export async function getMessages(
+  conversationId: string,
+) {
+  return apiRequest(
+    `/messages/conversations/${conversationId}`,
+  ) as Promise<Message[]>;
+}
+
+export async function sendMessage(
+  conversationId: string,
+  content: string,
+) {
+  return apiRequest(
+    `/messages/conversations/${conversationId}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        content,
+      }),
+    },
+  ) as Promise<Message>;
+}
+
+export async function markMessagesRead(
+  conversationId: string,
+) {
+  return apiRequest(
+    `/messages/conversations/${conversationId}/read`,
+    {
+      method: 'PATCH',
+    },
+  ) as Promise<{ success: boolean }>;
+}

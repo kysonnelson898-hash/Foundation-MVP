@@ -105,6 +105,39 @@ export class ProjectsService {
           task.priority === 'HIGH',
       ).length;
 
+    const projectProgress =
+      projects.map((project) => {
+        const projectTasks =
+          project.tasks;
+
+        const projectTotal =
+          projectTasks.length;
+
+        const projectCompleted =
+          projectTasks.filter(
+            (task) =>
+              task.completed ||
+              task.status === 'DONE',
+          ).length;
+
+        const percentage =
+          projectTotal === 0
+            ? 0
+            : Math.round(
+                (projectCompleted /
+                  projectTotal) *
+                  100,
+              );
+
+        return {
+          projectId: project.id,
+          totalTasks: projectTotal,
+          completedTasks:
+            projectCompleted,
+          progress: percentage,
+        };
+      });
+
     return {
       projects: projects.length,
       totalTasks,
@@ -113,6 +146,7 @@ export class ProjectsService {
       todoTasks,
       overdueTasks,
       highPriorityTasks,
+      projectProgress,
     };
   }
 
@@ -147,10 +181,7 @@ export class ProjectsService {
     projectId: string,
     updateProjectDto: UpdateProjectDto,
   ) {
-    await this.findOne(
-      userId,
-      projectId,
-    );
+    await this.findOne(userId, projectId);
 
     return this.prisma.project.update({
       where: {
@@ -158,14 +189,18 @@ export class ProjectsService {
       },
       data: {
         ...(updateProjectDto.name !==
-          undefined && {
-          name: updateProjectDto.name,
-        }),
+        undefined
+          ? {
+              name: updateProjectDto.name,
+            }
+          : {}),
         ...(updateProjectDto.description !==
-          undefined && {
-          description:
-            updateProjectDto.description,
-        }),
+        undefined
+          ? {
+              description:
+                updateProjectDto.description,
+            }
+          : {}),
       },
     });
   }
@@ -174,19 +209,12 @@ export class ProjectsService {
     userId: string,
     projectId: string,
   ) {
-    await this.findOne(
-      userId,
-      projectId,
-    );
+    await this.findOne(userId, projectId);
 
-    await this.prisma.project.delete({
+    return this.prisma.project.delete({
       where: {
         id: projectId,
       },
     });
-
-    return {
-      message: 'Project deleted successfully',
-    };
   }
 }

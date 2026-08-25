@@ -17,6 +17,13 @@ type Project = {
   createdAt: string;
 };
 
+type ProjectProgress = {
+  projectId: string;
+  totalTasks: number;
+  completedTasks: number;
+  progress: number;
+};
+
 type Dashboard = {
   projects: number;
   totalTasks: number;
@@ -25,6 +32,7 @@ type Dashboard = {
   todoTasks: number;
   overdueTasks: number;
   highPriorityTasks: number;
+  projectProgress: ProjectProgress[];
 };
 
 export default function DashboardPage() {
@@ -191,6 +199,12 @@ export default function DashboardPage() {
                   0,
                   current.projects - 1,
                 ),
+              projectProgress:
+                current.projectProgress.filter(
+                  (item) =>
+                    item.projectId !==
+                    project.id,
+                ),
             }
           : current,
       );
@@ -245,6 +259,16 @@ export default function DashboardPage() {
               ...current,
               projects:
                 current.projects + 1,
+              projectProgress: [
+                {
+                  projectId:
+                    newProject.id,
+                  totalTasks: 0,
+                  completedTasks: 0,
+                  progress: 0,
+                },
+                ...current.projectProgress,
+              ],
             }
           : current,
       );
@@ -261,6 +285,45 @@ export default function DashboardPage() {
     } finally {
       setCreating(false);
     }
+  }
+
+  function getProjectProgress(
+    projectId: string,
+  ) {
+    return (
+      dashboard?.projectProgress.find(
+        (item) =>
+          item.projectId === projectId,
+      ) ?? {
+        projectId,
+        totalTasks: 0,
+        completedTasks: 0,
+        progress: 0,
+      }
+    );
+  }
+
+  function getProgressClasses(
+    progress: number,
+  ) {
+    if (progress >= 67) {
+      return {
+        bar: 'bg-green-500',
+        text: 'text-green-600',
+      };
+    }
+
+    if (progress >= 34) {
+      return {
+        bar: 'bg-yellow-400',
+        text: 'text-yellow-600',
+      };
+    }
+
+    return {
+      bar: 'bg-red-500',
+      text: 'text-red-600',
+    };
   }
 
   if (loading) {
@@ -287,13 +350,22 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/chat"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700"
+            >
+              💬 Messages
+            </Link>
+
+            <button
+              type="button"
+              onClick={logout}
+              className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -515,6 +587,16 @@ export default function DashboardPage() {
                 updatingProjectId ===
                 project.id;
 
+              const projectProgress =
+                getProjectProgress(
+                  project.id,
+                );
+
+              const progressClasses =
+                getProgressClasses(
+                  projectProgress.progress,
+                );
+
               if (editing) {
                 return (
                   <div
@@ -609,14 +691,57 @@ export default function DashboardPage() {
                   key={project.id}
                   className="rounded-xl border bg-white p-6 shadow-sm transition hover:shadow-md"
                 >
-                  <h3 className="text-xl font-semibold">
-                    {project.name}
-                  </h3>
+                  <div className="flex items-start justify-between gap-4">
+                    <h3 className="text-xl font-semibold">
+                      {project.name}
+                    </h3>
+
+                    <span
+                      className={`text-sm font-bold ${progressClasses.text}`}
+                    >
+                      {projectProgress.progress}%
+                    </span>
+                  </div>
 
                   <p className="mt-2 min-h-12 text-sm text-zinc-500">
                     {project.description ||
                       'No project description provided.'}
                   </p>
+
+                  <div className="mt-5">
+                    <div className="mb-2 flex items-center justify-between text-xs font-medium text-zinc-500">
+                      <span>
+                        Task progress
+                      </span>
+
+                      <span>
+                        {
+                          projectProgress.completedTasks
+                        }{' '}
+                        /{' '}
+                        {
+                          projectProgress.totalTasks
+                        }{' '}
+                        completed
+                      </span>
+                    </div>
+
+                    <div className="h-3 w-full overflow-hidden rounded-full bg-zinc-200">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${progressClasses.bar}`}
+                        style={{
+                          width: `${projectProgress.progress}%`,
+                        }}
+                      />
+                    </div>
+
+                    {projectProgress.totalTasks ===
+                      0 && (
+                      <p className="mt-2 text-xs text-zinc-400">
+                        No tasks yet
+                      </p>
+                    )}
+                  </div>
 
                   <div className="mt-6 flex flex-wrap items-center gap-3">
                     <Link
