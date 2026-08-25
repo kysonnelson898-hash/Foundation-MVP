@@ -77,6 +77,10 @@ export async function getProjects() {
   return apiRequest('/projects');
 }
 
+export async function getDashboard() {
+  return apiRequest('/projects/dashboard');
+}
+
 export async function getProject(
   projectId: string,
 ) {

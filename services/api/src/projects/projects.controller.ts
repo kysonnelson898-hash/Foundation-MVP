@@ -14,7 +14,9 @@ import { ProjectsService } from './projects.service';
 @Controller('projects')
 @UseGuards(JwtAuthGuard)
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(
+    private readonly projectsService: ProjectsService,
+  ) {}
 
   @Post()
   create(
@@ -28,8 +30,21 @@ export class ProjectsController {
   }
 
   @Get()
-  findAll(@Request() request: { user: { id: string } }) {
-    return this.projectsService.findAll(request.user.id);
+  findAll(
+    @Request() request: { user: { id: string } },
+  ) {
+    return this.projectsService.findAll(
+      request.user.id,
+    );
+  }
+
+  @Get('dashboard')
+  getDashboard(
+    @Request() request: { user: { id: string } },
+  ) {
+    return this.projectsService.getDashboard(
+      request.user.id,
+    );
   }
 
   @Get(':id')
