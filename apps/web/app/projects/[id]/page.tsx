@@ -33,27 +33,49 @@ type Task = {
   projectId: string;
 };
 
+type TaskFilter =
+  | 'ALL'
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'HIGH'
+  | 'MEDIUM'
+  | 'LOW'
+  | 'OVERDUE';
+
 export default function ProjectPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const [projectId, setProjectId] = useState('');
+  const [projectId, setProjectId] =
+    useState('');
+
   const [project, setProject] =
     useState<Project | null>(null);
 
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] =
+    useState<Task[]>([]);
 
-  const [title, setTitle] = useState('');
+  const [taskFilter, setTaskFilter] =
+    useState<TaskFilter>('ALL');
+
+  const [title, setTitle] =
+    useState('');
+
   const [description, setDescription] =
     useState('');
-  const [dueDate, setDueDate] = useState('');
+
+  const [dueDate, setDueDate] =
+    useState('');
+
   const [priority, setPriority] =
     useState<'LOW' | 'MEDIUM' | 'HIGH'>(
       'MEDIUM',
     );
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
+
   const [creating, setCreating] =
     useState(false);
 
@@ -66,18 +88,23 @@ export default function ProjectPage({
   const [editingTitle, setEditingTitle] =
     useState('');
 
-  const [editingDescription, setEditingDescription] =
-    useState('');
+  const [
+    editingDescription,
+    setEditingDescription,
+  ] = useState('');
 
   const [editingDueDate, setEditingDueDate] =
     useState('');
 
-  const [editingPriority, setEditingPriority] =
-    useState<'LOW' | 'MEDIUM' | 'HIGH'>(
-      'MEDIUM',
-    );
+  const [
+    editingPriority,
+    setEditingPriority,
+  ] = useState<
+    'LOW' | 'MEDIUM' | 'HIGH'
+  >('MEDIUM');
 
-  const [error, setError] = useState('');
+  const [error, setError] =
+    useState('');
 
   useEffect(() => {
     async function loadProject() {
@@ -87,18 +114,23 @@ export default function ProjectPage({
         setProjectId(id);
 
         const token =
-          localStorage.getItem('accessToken');
+          localStorage.getItem(
+            'accessToken',
+          );
 
         if (!token) {
-          window.location.href = '/login';
+          window.location.href =
+            '/login';
           return;
         }
 
-        const [projectData, tasksData] =
-          await Promise.all([
-            getProject(id),
-            getTasks(id),
-          ]);
+        const [
+          projectData,
+          tasksData,
+        ] = await Promise.all([
+          getProject(id),
+          getTasks(id),
+        ]);
 
         setProject(projectData);
         setTasks(tasksData);
@@ -126,10 +158,13 @@ export default function ProjectPage({
     }
 
     const token =
-      localStorage.getItem('accessToken');
+      localStorage.getItem(
+        'accessToken',
+      );
 
     if (!token) {
-      window.location.href = '/login';
+      window.location.href =
+        '/login';
       return;
     }
 
@@ -137,13 +172,15 @@ export default function ProjectPage({
     setError('');
 
     try {
-      const newTask = await createTask(
-        projectId,
-        title.trim(),
-        description.trim() || undefined,
-        dueDate || undefined,
-        priority,
-      );
+      const newTask =
+        await createTask(
+          projectId,
+          title.trim(),
+          description.trim() ||
+            undefined,
+          dueDate || undefined,
+          priority,
+        );
 
       setTasks((current) => [
         newTask,
@@ -165,18 +202,22 @@ export default function ProjectPage({
     }
   }
 
-  async function toggleTask(task: Task) {
+  async function toggleTask(
+    task: Task,
+  ) {
     setUpdatingTaskId(task.id);
     setError('');
 
     try {
-      const updatedTask = await updateTask(
-        projectId,
-        task.id,
-        {
-          completed: !task.completed,
-        },
-      );
+      const updatedTask =
+        await updateTask(
+          projectId,
+          task.id,
+          {
+            completed:
+              !task.completed,
+          },
+        );
 
       setTasks((current) =>
         current.map((item) =>
@@ -196,7 +237,9 @@ export default function ProjectPage({
     }
   }
 
-  function startEditing(task: Task) {
+  function startEditing(
+    task: Task,
+  ) {
     setEditingTaskId(task.id);
     setEditingTitle(task.title);
     setEditingDescription(
@@ -211,7 +254,9 @@ export default function ProjectPage({
         : '',
     );
 
-    setEditingPriority(task.priority);
+    setEditingPriority(
+      task.priority,
+    );
 
     setError('');
   }
@@ -224,9 +269,13 @@ export default function ProjectPage({
     setEditingPriority('MEDIUM');
   }
 
-  async function saveTask(task: Task) {
+  async function saveTask(
+    task: Task,
+  ) {
     if (!editingTitle.trim()) {
-      setError('Task title cannot be empty');
+      setError(
+        'Task title cannot be empty',
+      );
       return;
     }
 
@@ -234,18 +283,21 @@ export default function ProjectPage({
     setError('');
 
     try {
-      const updatedTask = await updateTask(
-        projectId,
-        task.id,
-        {
-          title: editingTitle.trim(),
-          description:
-            editingDescription.trim(),
-          dueDate:
-            editingDueDate || '',
-          priority: editingPriority,
-        },
-      );
+      const updatedTask =
+        await updateTask(
+          projectId,
+          task.id,
+          {
+            title:
+              editingTitle.trim(),
+            description:
+              editingDescription.trim(),
+            dueDate:
+              editingDueDate || '',
+            priority:
+              editingPriority,
+          },
+        );
 
       setTasks((current) =>
         current.map((item) =>
@@ -267,10 +319,13 @@ export default function ProjectPage({
     }
   }
 
-  async function removeTask(task: Task) {
-    const confirmed = window.confirm(
-      `Delete "${task.title}"? This cannot be undone.`,
-    );
+  async function removeTask(
+    task: Task,
+  ) {
+    const confirmed =
+      window.confirm(
+        `Delete "${task.title}"? This cannot be undone.`,
+      );
 
     if (!confirmed) {
       return;
@@ -287,7 +342,8 @@ export default function ProjectPage({
 
       setTasks((current) =>
         current.filter(
-          (item) => item.id !== task.id,
+          (item) =>
+            item.id !== task.id,
         ),
       );
     } catch (err) {
@@ -312,7 +368,9 @@ export default function ProjectPage({
       return null;
     }
 
-    return new Date(value).toLocaleDateString(
+    return new Date(
+      value,
+    ).toLocaleDateString(
       undefined,
       {
         year: 'numeric',
@@ -322,21 +380,37 @@ export default function ProjectPage({
     );
   }
 
-  function isOverdue(task: Task) {
-    if (!task.dueDate || task.completed) {
+  function isOverdue(
+    task: Task,
+  ) {
+    if (
+      !task.dueDate ||
+      task.completed
+    ) {
       return false;
     }
 
-    const due = new Date(task.dueDate);
+    const due = new Date(
+      task.dueDate,
+    );
+
     const now = new Date();
 
-    due.setHours(23, 59, 59, 999);
+    due.setHours(
+      23,
+      59,
+      59,
+      999,
+    );
 
     return due < now;
   }
 
   function priorityLabel(
-    value: 'LOW' | 'MEDIUM' | 'HIGH',
+    value:
+      | 'LOW'
+      | 'MEDIUM'
+      | 'HIGH',
   ) {
     if (value === 'HIGH') {
       return 'High';
@@ -350,7 +424,10 @@ export default function ProjectPage({
   }
 
   function priorityClass(
-    value: 'LOW' | 'MEDIUM' | 'HIGH',
+    value:
+      | 'LOW'
+      | 'MEDIUM'
+      | 'HIGH',
   ) {
     if (value === 'HIGH') {
       return 'bg-red-50 text-red-700';
@@ -362,6 +439,52 @@ export default function ProjectPage({
 
     return 'bg-amber-50 text-amber-700';
   }
+
+  function matchesFilter(
+    task: Task,
+  ) {
+    switch (taskFilter) {
+      case 'ACTIVE':
+        return !task.completed;
+
+      case 'COMPLETED':
+        return task.completed;
+
+      case 'HIGH':
+        return task.priority === 'HIGH';
+
+      case 'MEDIUM':
+        return task.priority === 'MEDIUM';
+
+      case 'LOW':
+        return task.priority === 'LOW';
+
+      case 'OVERDUE':
+        return isOverdue(task);
+
+      case 'ALL':
+      default:
+        return true;
+    }
+  }
+
+  const filteredTasks =
+    tasks.filter(matchesFilter);
+
+  const activeCount =
+    tasks.filter(
+      (task) => !task.completed,
+    ).length;
+
+  const completedCount =
+    tasks.filter(
+      (task) => task.completed,
+    ).length;
+
+  const overdueCount =
+    tasks.filter(
+      (task) => isOverdue(task),
+    ).length;
 
   if (loading) {
     return (
@@ -499,7 +622,8 @@ export default function ProjectPage({
                     value={priority}
                     onChange={(event) =>
                       setPriority(
-                        event.target.value as
+                        event.target
+                          .value as
                           | 'LOW'
                           | 'MEDIUM'
                           | 'HIGH',
@@ -510,9 +634,11 @@ export default function ProjectPage({
                     <option value="LOW">
                       Low
                     </option>
+
                     <option value="MEDIUM">
                       Medium
                     </option>
+
                     <option value="HIGH">
                       High
                     </option>
@@ -553,322 +679,403 @@ export default function ProjectPage({
             </div>
 
             <div className="lg:col-span-2">
-              <div className="mb-5 flex items-center justify-between">
-                <h2 className="bg-gradient-to-r from-zinc-950 to-blue-700 bg-clip-text text-xl font-bold text-transparent">
-                  Tasks
-                </h2>
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="bg-gradient-to-r from-zinc-950 to-blue-700 bg-clip-text text-xl font-bold text-transparent">
+                    Tasks
+                  </h2>
+
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {activeCount} active ·{' '}
+                    {completedCount}{' '}
+                    completed ·{' '}
+                    {overdueCount}{' '}
+                    overdue
+                  </p>
+                </div>
 
                 <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-                  {tasks.length} task
-                  {tasks.length === 1
-                    ? ''
-                    : 's'}
+                  {filteredTasks.length} shown
                 </span>
               </div>
 
-              {tasks.length === 0 ? (
+              <div className="mb-6 flex flex-wrap gap-2 rounded-2xl border border-blue-100/80 bg-white p-3 shadow-sm">
+                {(
+                  [
+                    ['ALL', 'All'],
+                    ['ACTIVE', 'Active'],
+                    [
+                      'COMPLETED',
+                      'Completed',
+                    ],
+                    ['HIGH', 'High'],
+                    ['MEDIUM', 'Medium'],
+                    ['LOW', 'Low'],
+                    [
+                      'OVERDUE',
+                      'Overdue',
+                    ],
+                  ] as [
+                    TaskFilter,
+                    string,
+                  ][]
+                ).map(
+                  ([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() =>
+                        setTaskFilter(
+                          value,
+                        )
+                      }
+                      className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                        taskFilter === value
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-zinc-50 text-zinc-600 hover:bg-blue-50 hover:text-blue-700'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              {filteredTasks.length ===
+              0 ? (
                 <div className="rounded-2xl border border-dashed border-blue-200 bg-white p-10 text-center shadow-sm">
                   <h3 className="font-semibold text-zinc-900">
-                    No tasks yet
+                    No matching tasks
                   </h3>
 
                   <p className="mt-2 text-sm text-zinc-500">
-                    Create your first task for
-                    this project.
+                    Try a different
+                    filter or create a
+                    new task.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {tasks.map((task) => {
-                    const updating =
-                      updatingTaskId ===
-                      task.id;
+                  {filteredTasks.map(
+                    (task) => {
+                      const updating =
+                        updatingTaskId ===
+                        task.id;
 
-                    const editing =
-                      editingTaskId ===
-                      task.id;
+                      const editing =
+                        editingTaskId ===
+                        task.id;
 
-                    const formattedDueDate =
-                      formatDueDate(
-                        task.dueDate,
-                      );
+                      const formattedDueDate =
+                        formatDueDate(
+                          task.dueDate,
+                        );
 
-                    const overdue =
-                      isOverdue(task);
+                      const overdue =
+                        isOverdue(task);
 
-                    return (
-                      <div
-                        key={task.id}
-                        className={`rounded-2xl border border-blue-100/80 bg-white/95 p-5 shadow-[0_6px_24px_rgba(59,130,246,0.07)] transition ${
-                          updating
-                            ? 'opacity-70'
-                            : 'hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(59,130,246,0.12)]'
-                        }`}
-                      >
-                        {editing ? (
-                          <div className="space-y-4">
-                            <div>
-                              <label
-                                htmlFor={`edit-title-${task.id}`}
-                                className="mb-1 block text-sm font-semibold text-zinc-800"
-                              >
-                                Task title
-                              </label>
+                      return (
+                        <div
+                          key={task.id}
+                          className={`rounded-2xl border border-blue-100/80 bg-white/95 p-5 shadow-[0_6px_24px_rgba(59,130,246,0.07)] transition ${
+                            updating
+                              ? 'opacity-70'
+                              : 'hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(59,130,246,0.12)]'
+                          }`}
+                        >
+                          {editing ? (
+                            <div className="space-y-4">
+                              <div>
+                                <label
+                                  htmlFor={`edit-title-${task.id}`}
+                                  className="mb-1 block text-sm font-semibold text-zinc-800"
+                                >
+                                  Task title
+                                </label>
 
-                              <input
-                                id={`edit-title-${task.id}`}
-                                type="text"
-                                value={editingTitle}
-                                onChange={(event) =>
-                                  setEditingTitle(
-                                    event.target
-                                      .value,
-                                  )
-                                }
-                                className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                              />
-                            </div>
+                                <input
+                                  id={`edit-title-${task.id}`}
+                                  type="text"
+                                  value={
+                                    editingTitle
+                                  }
+                                  onChange={(
+                                    event,
+                                  ) =>
+                                    setEditingTitle(
+                                      event
+                                        .target
+                                        .value,
+                                    )
+                                  }
+                                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                                />
+                              </div>
 
-                            <div>
-                              <label
-                                htmlFor={`edit-description-${task.id}`}
-                                className="mb-1 block text-sm font-semibold text-zinc-800"
-                              >
-                                Description
-                              </label>
+                              <div>
+                                <label
+                                  htmlFor={`edit-description-${task.id}`}
+                                  className="mb-1 block text-sm font-semibold text-zinc-800"
+                                >
+                                  Description
+                                </label>
 
-                              <textarea
-                                id={`edit-description-${task.id}`}
-                                value={
-                                  editingDescription
-                                }
-                                onChange={(event) =>
-                                  setEditingDescription(
-                                    event.target
-                                      .value,
-                                  )
-                                }
-                                rows={3}
-                                className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                              />
-                            </div>
+                                <textarea
+                                  id={`edit-description-${task.id}`}
+                                  value={
+                                    editingDescription
+                                  }
+                                  onChange={(
+                                    event,
+                                  ) =>
+                                    setEditingDescription(
+                                      event
+                                        .target
+                                        .value,
+                                    )
+                                  }
+                                  rows={3}
+                                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                                />
+                              </div>
 
-                            <div>
-                              <label
-                                htmlFor={`edit-priority-${task.id}`}
-                                className="mb-1 block text-sm font-semibold text-zinc-800"
-                              >
-                                Priority
-                              </label>
+                              <div>
+                                <label
+                                  htmlFor={`edit-priority-${task.id}`}
+                                  className="mb-1 block text-sm font-semibold text-zinc-800"
+                                >
+                                  Priority
+                                </label>
 
-                              <select
-                                id={`edit-priority-${task.id}`}
-                                value={
-                                  editingPriority
-                                }
-                                onChange={(event) =>
-                                  setEditingPriority(
-                                    event.target
-                                      .value as
-                                      | 'LOW'
-                                      | 'MEDIUM'
-                                      | 'HIGH',
-                                  )
-                                }
-                                className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                              >
-                                <option value="LOW">
-                                  Low
-                                </option>
-                                <option value="MEDIUM">
-                                  Medium
-                                </option>
-                                <option value="HIGH">
-                                  High
-                                </option>
-                              </select>
-                            </div>
+                                <select
+                                  id={`edit-priority-${task.id}`}
+                                  value={
+                                    editingPriority
+                                  }
+                                  onChange={(
+                                    event,
+                                  ) =>
+                                    setEditingPriority(
+                                      event
+                                        .target
+                                        .value as
+                                        | 'LOW'
+                                        | 'MEDIUM'
+                                        | 'HIGH',
+                                    )
+                                  }
+                                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                                >
+                                  <option value="LOW">
+                                    Low
+                                  </option>
 
-                            <div>
-                              <label
-                                htmlFor={`edit-due-date-${task.id}`}
-                                className="mb-1 block text-sm font-semibold text-zinc-800"
-                              >
-                                Due date
-                              </label>
+                                  <option value="MEDIUM">
+                                    Medium
+                                  </option>
 
-                              <input
-                                id={`edit-due-date-${task.id}`}
-                                type="date"
-                                value={
-                                  editingDueDate
-                                }
-                                onChange={(event) =>
-                                  setEditingDueDate(
-                                    event.target
-                                      .value,
-                                  )
-                                }
-                                className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                              />
+                                  <option value="HIGH">
+                                    High
+                                  </option>
+                                </select>
+                              </div>
 
-                              {editingDueDate && (
+                              <div>
+                                <label
+                                  htmlFor={`edit-due-date-${task.id}`}
+                                  className="mb-1 block text-sm font-semibold text-zinc-800"
+                                >
+                                  Due date
+                                </label>
+
+                                <input
+                                  id={`edit-due-date-${task.id}`}
+                                  type="date"
+                                  value={
+                                    editingDueDate
+                                  }
+                                  onChange={(
+                                    event,
+                                  ) =>
+                                    setEditingDueDate(
+                                      event
+                                        .target
+                                        .value,
+                                    )
+                                  }
+                                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                                />
+
+                                {editingDueDate && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setEditingDueDate(
+                                        '',
+                                      )
+                                    }
+                                    className="mt-2 text-xs font-medium text-zinc-500 hover:text-red-600"
+                                  >
+                                    Clear due date
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="flex gap-3">
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    setEditingDueDate(
-                                      '',
+                                    saveTask(
+                                      task,
                                     )
                                   }
-                                  className="mt-2 text-xs font-medium text-zinc-500 hover:text-red-600"
+                                  disabled={
+                                    updating
+                                  }
+                                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
                                 >
-                                  Clear due date
+                                  {updating
+                                    ? 'Saving...'
+                                    : 'Save'}
                                 </button>
-                              )}
-                            </div>
 
-                            <div className="flex gap-3">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  saveTask(
+                                <button
+                                  type="button"
+                                  onClick={
+                                    cancelEditing
+                                  }
+                                  disabled={
+                                    updating
+                                  }
+                                  className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start gap-4">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  task.completed
+                                }
+                                disabled={
+                                  updating
+                                }
+                                onChange={() =>
+                                  toggleTask(
                                     task,
                                   )
                                 }
-                                disabled={updating}
-                                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
-                              >
-                                {updating
-                                  ? 'Saving...'
-                                  : 'Save'}
-                              </button>
+                                className="mt-1 h-5 w-5 cursor-pointer accent-blue-600 disabled:cursor-wait"
+                              />
 
-                              <button
-                                type="button"
-                                onClick={
-                                  cancelEditing
-                                }
-                                disabled={updating}
-                                className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-start gap-4">
-                            <input
-                              type="checkbox"
-                              checked={
-                                task.completed
-                              }
-                              disabled={updating}
-                              onChange={() =>
-                                toggleTask(
-                                  task,
-                                )
-                              }
-                              className="mt-1 h-5 w-5 cursor-pointer accent-blue-600 disabled:cursor-wait"
-                            />
-
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3
-                                  className={`text-lg font-semibold ${
-                                    task.completed
-                                      ? 'text-zinc-400 line-through'
-                                      : 'text-zinc-900'
-                                  }`}
-                                >
-                                  {task.title}
-                                </h3>
-
-                                <span
-                                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${priorityClass(
-                                    task.priority,
-                                  )}`}
-                                >
-                                  {priorityLabel(
-                                    task.priority,
-                                  )}
-                                </span>
-                              </div>
-
-                              {task.description && (
-                                <p className="mt-2 text-sm leading-6 text-zinc-700">
-                                  {
-                                    task.description
-                                  }
-                                </p>
-                              )}
-
-                              <div className="mt-3 flex flex-wrap items-center gap-2">
-                                {formattedDueDate && (
-                                  <span
-                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                      overdue
-                                        ? 'bg-red-50 text-red-600'
-                                        : task.completed
-                                          ? 'bg-zinc-100 text-zinc-500'
-                                          : 'bg-blue-50 text-blue-700'
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3
+                                    className={`text-lg font-semibold ${
+                                      task.completed
+                                        ? 'text-zinc-400 line-through'
+                                        : 'text-zinc-900'
                                     }`}
                                   >
-                                    {overdue
-                                      ? 'Overdue · '
-                                      : 'Due · '}
                                     {
-                                      formattedDueDate
+                                      task.title
                                     }
+                                  </h3>
+
+                                  <span
+                                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${priorityClass(
+                                      task.priority,
+                                    )}`}
+                                  >
+                                    {priorityLabel(
+                                      task.priority,
+                                    )}
+                                  </span>
+                                </div>
+
+                                {task.description && (
+                                  <p className="mt-2 text-sm leading-6 text-zinc-700">
+                                    {
+                                      task.description
+                                    }
+                                  </p>
+                                )}
+
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                  {formattedDueDate && (
+                                    <span
+                                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                        overdue
+                                          ? 'bg-red-50 text-red-600'
+                                          : task.completed
+                                            ? 'bg-zinc-100 text-zinc-500'
+                                            : 'bg-blue-50 text-blue-700'
+                                      }`}
+                                    >
+                                      {overdue
+                                        ? 'Overdue · '
+                                        : 'Due · '}
+                                      {
+                                        formattedDueDate
+                                      }
+                                    </span>
+                                  )}
+
+                                  <span className="text-xs font-medium text-zinc-500">
+                                    Created{' '}
+                                    {new Date(
+                                      task.createdAt,
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex shrink-0 items-center gap-2">
+                                {updating && (
+                                  <span className="text-xs font-medium text-blue-600">
+                                    Saving...
                                   </span>
                                 )}
 
-                                <span className="text-xs font-medium text-zinc-500">
-                                  Created{' '}
-                                  {new Date(
-                                    task.createdAt,
-                                  ).toLocaleDateString()}
-                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    startEditing(
+                                      task,
+                                    )
+                                  }
+                                  disabled={
+                                    updating
+                                  }
+                                  className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50 disabled:opacity-50"
+                                >
+                                  Edit
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removeTask(
+                                      task,
+                                    )
+                                  }
+                                  disabled={
+                                    updating
+                                  }
+                                  className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                                >
+                                  Delete
+                                </button>
                               </div>
                             </div>
-
-                            <div className="flex shrink-0 items-center gap-2">
-                              {updating && (
-                                <span className="text-xs font-medium text-blue-600">
-                                  Saving...
-                                </span>
-                              )}
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  startEditing(
-                                    task,
-                                  )
-                                }
-                                disabled={updating}
-                                className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50 disabled:opacity-50"
-                              >
-                                Edit
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  removeTask(
-                                    task,
-                                  )
-                                }
-                                disabled={updating}
-                                className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          )}
+                        </div>
+                      );
+                    },
+                  )}
                 </div>
               )}
             </div>
