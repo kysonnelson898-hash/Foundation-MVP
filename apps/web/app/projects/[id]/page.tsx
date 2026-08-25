@@ -3,6 +3,7 @@
 import {
   FormEvent,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -42,6 +43,12 @@ type TaskFilter =
   | 'LOW'
   | 'OVERDUE';
 
+type TaskSort =
+  | 'NEWEST'
+  | 'OLDEST'
+  | 'DUE_DATE'
+  | 'PRIORITY';
+
 export default function ProjectPage({
   params,
 }: {
@@ -58,6 +65,9 @@ export default function ProjectPage({
 
   const [taskFilter, setTaskFilter] =
     useState<TaskFilter>('ALL');
+
+  const [taskSort, setTaskSort] =
+    useState<TaskSort>('NEWEST');
 
   const [title, setTitle] =
     useState('');
@@ -468,8 +478,97 @@ export default function ProjectPage({
     }
   }
 
-  const filteredTasks =
-    tasks.filter(matchesFilter);
+  function priorityValue(
+    value:
+      | 'LOW'
+      | 'MEDIUM'
+      | 'HIGH',
+  ) {
+    if (value === 'HIGH') {
+      return 3;
+    }
+
+    if (value === 'MEDIUM') {
+      return 2;
+    }
+
+    return 1;
+  }
+
+  const filteredAndSortedTasks =
+    useMemo(() => {
+      const filtered =
+        tasks.filter(
+          matchesFilter,
+        );
+
+      return [...filtered].sort(
+        (a, b) => {
+          switch (taskSort) {
+            case 'OLDEST':
+              return (
+                new Date(
+                  a.createdAt,
+                ).getTime() -
+                new Date(
+                  b.createdAt,
+                ).getTime()
+              );
+
+            case 'DUE_DATE': {
+              if (
+                !a.dueDate &&
+                !b.dueDate
+              ) {
+                return 0;
+              }
+
+              if (!a.dueDate) {
+                return 1;
+              }
+
+              if (!b.dueDate) {
+                return -1;
+              }
+
+              return (
+                new Date(
+                  a.dueDate,
+                ).getTime() -
+                new Date(
+                  b.dueDate,
+                ).getTime()
+              );
+            }
+
+            case 'PRIORITY':
+              return (
+                priorityValue(
+                  b.priority,
+                ) -
+                priorityValue(
+                  a.priority,
+                )
+              );
+
+            case 'NEWEST':
+            default:
+              return (
+                new Date(
+                  b.createdAt,
+                ).getTime() -
+                new Date(
+                  a.createdAt,
+                ).getTime()
+              );
+          }
+        },
+      );
+    }, [
+      tasks,
+      taskFilter,
+      taskSort,
+    ]);
 
   const activeCount =
     tasks.filter(
@@ -695,53 +794,99 @@ export default function ProjectPage({
                 </div>
 
                 <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-                  {filteredTasks.length} shown
+                  {
+                    filteredAndSortedTasks.length
+                  }{' '}
+                  shown
                 </span>
               </div>
 
-              <div className="mb-6 flex flex-wrap gap-2 rounded-2xl border border-blue-100/80 bg-white p-3 shadow-sm">
-                {(
-                  [
-                    ['ALL', 'All'],
-                    ['ACTIVE', 'Active'],
+              <div className="mb-4 rounded-2xl border border-blue-100/80 bg-white p-3 shadow-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="mr-1 text-sm font-semibold text-zinc-700">
+                    Filter:
+                  </span>
+
+                  {(
                     [
-                      'COMPLETED',
-                      'Completed',
-                    ],
-                    ['HIGH', 'High'],
-                    ['MEDIUM', 'Medium'],
-                    ['LOW', 'Low'],
-                    [
-                      'OVERDUE',
-                      'Overdue',
-                    ],
-                  ] as [
-                    TaskFilter,
-                    string,
-                  ][]
-                ).map(
-                  ([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() =>
-                        setTaskFilter(
-                          value,
-                        )
-                      }
-                      className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                        taskFilter === value
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-zinc-50 text-zinc-600 hover:bg-blue-50 hover:text-blue-700'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ),
-                )}
+                      ['ALL', 'All'],
+                      ['ACTIVE', 'Active'],
+                      [
+                        'COMPLETED',
+                        'Completed',
+                      ],
+                      ['HIGH', 'High'],
+                      ['MEDIUM', 'Medium'],
+                      ['LOW', 'Low'],
+                      [
+                        'OVERDUE',
+                        'Overdue',
+                      ],
+                    ] as [
+                      TaskFilter,
+                      string,
+                    ][]
+                  ).map(
+                    ([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() =>
+                          setTaskFilter(
+                            value,
+                          )
+                        }
+                        className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                          taskFilter === value
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-zinc-50 text-zinc-600 hover:bg-blue-50 hover:text-blue-700'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ),
+                  )}
+                </div>
               </div>
 
-              {filteredTasks.length ===
+              <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-blue-100/80 bg-white p-4 shadow-sm">
+                <label
+                  htmlFor="task-sort"
+                  className="text-sm font-semibold text-zinc-700"
+                >
+                  Sort by:
+                </label>
+
+                <select
+                  id="task-sort"
+                  value={taskSort}
+                  onChange={(event) =>
+                    setTaskSort(
+                      event.target
+                        .value as TaskSort,
+                    )
+                  }
+                  className="rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm font-medium text-zinc-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="NEWEST">
+                    Newest first
+                  </option>
+
+                  <option value="OLDEST">
+                    Oldest first
+                  </option>
+
+                  <option value="DUE_DATE">
+                    Due date
+                  </option>
+
+                  <option value="PRIORITY">
+                    Priority
+                  </option>
+                </select>
+              </div>
+
+              {filteredAndSortedTasks.length ===
               0 ? (
                 <div className="rounded-2xl border border-dashed border-blue-200 bg-white p-10 text-center shadow-sm">
                   <h3 className="font-semibold text-zinc-900">
@@ -756,7 +901,7 @@ export default function ProjectPage({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {filteredTasks.map(
+                  {filteredAndSortedTasks.map(
                     (task) => {
                       const updating =
                         updatingTaskId ===
