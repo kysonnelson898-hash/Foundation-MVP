@@ -2,11 +2,18 @@
 
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
-import { login } from '../../lib/api';
 
-export default function LoginPage() {
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
+  'http://localhost:3000';
+
+export default function SignupPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] =
+    useState('');
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -14,23 +21,56 @@ export default function LoginPage() {
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
+
     setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (password.length < 8) {
+      setError(
+        'Password must be at least 8 characters.',
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const data = await login(email, password);
-
-      localStorage.setItem(
-        'accessToken',
-        data.accessToken,
+      const response = await fetch(
+        `${API_URL}/users`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: name.trim() || undefined,
+            email: email.trim(),
+            password,
+          }),
+        },
       );
 
-      window.location.href = '/';
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          Array.isArray(data.message)
+            ? data.message.join(', ')
+            : data.message ??
+                'Unable to create account.',
+        );
+      }
+
+      window.location.href = '/login';
     } catch (error) {
       setError(
         error instanceof Error
           ? error.message
-          : 'Unable to sign in',
+          : 'Unable to create account.',
       );
     } finally {
       setLoading(false);
@@ -46,11 +86,11 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-3xl font-bold tracking-tight text-white">
-            Welcome back
+            Create your account
           </h1>
 
           <p className="mt-2 text-zinc-400">
-            Sign in to your DevFlow workspace
+            Start managing your projects with DevFlow
           </p>
         </div>
 
@@ -59,6 +99,31 @@ export default function LoginPage() {
             onSubmit={handleSubmit}
             className="space-y-5"
           >
+            <div>
+              <label
+                htmlFor="name"
+                className="mb-2 block text-sm font-medium text-zinc-200"
+              >
+                Name
+                <span className="ml-1 text-zinc-500">
+                  (optional)
+                </span>
+              </label>
+
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(event) =>
+                  setName(event.target.value)
+                }
+                placeholder="Your name"
+                autoComplete="name"
+                maxLength={100}
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+
             <div>
               <label
                 htmlFor="email"
@@ -96,8 +161,34 @@ export default function LoginPage() {
                 onChange={(event) =>
                   setPassword(event.target.value)
                 }
-                placeholder="Enter your password"
-                autoComplete="current-password"
+                placeholder="At least 8 characters"
+                autoComplete="new-password"
+                minLength={8}
+                required
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="confirm-password"
+                className="mb-2 block text-sm font-medium text-zinc-200"
+              >
+                Confirm password
+              </label>
+
+              <input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) =>
+                  setConfirmPassword(
+                    event.target.value,
+                  )
+                }
+                placeholder="Enter your password again"
+                autoComplete="new-password"
+                minLength={8}
                 required
                 className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
@@ -115,28 +206,26 @@ export default function LoginPage() {
               className="w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading
-                ? 'Signing in...'
-                : 'Sign in'}
+                ? 'Creating account...'
+                : 'Create account'}
             </button>
           </form>
 
           <div className="my-6 flex items-center gap-4">
             <div className="h-px flex-1 bg-zinc-800" />
+
             <span className="text-xs text-zinc-600">
-              OR
+              ALREADY A MEMBER?
             </span>
+
             <div className="h-px flex-1 bg-zinc-800" />
           </div>
 
-          <p className="text-center text-sm text-zinc-400">
-            Don't have a DevFlow account?
-          </p>
-
           <Link
-            href="/signup"
-            className="mt-3 block w-full rounded-xl border border-zinc-700 px-4 py-3 text-center font-semibold text-white transition hover:border-zinc-500 hover:bg-zinc-800"
+            href="/login"
+            className="block w-full rounded-xl border border-zinc-700 px-4 py-3 text-center font-semibold text-white transition hover:border-zinc-500 hover:bg-zinc-800"
           >
-            Create an account
+            Sign in instead
           </Link>
         </div>
 

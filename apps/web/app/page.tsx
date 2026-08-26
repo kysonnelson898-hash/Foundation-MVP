@@ -341,11 +341,11 @@ export default function DashboardPage() {
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-2xl font-bold text-zinc-950">
               DevFlow
             </h1>
 
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-zinc-700">
               Project dashboard
             </p>
           </div>
@@ -372,11 +372,11 @@ export default function DashboardPage() {
       <section className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-3xl font-bold">
+            <h2 className="text-3xl font-bold text-zinc-950">
               Dashboard
             </h2>
 
-            <p className="mt-2 text-zinc-500">
+            <p className="mt-2 text-zinc-700">
               See your projects and task progress at a glance.
             </p>
           </div>
@@ -407,7 +407,7 @@ export default function DashboardPage() {
             onSubmit={handleCreateProject}
             className="mb-10 rounded-xl border bg-white p-6 shadow-sm"
           >
-            <h3 className="text-xl font-semibold">
+            <h3 className="text-xl font-semibold text-zinc-950">
               Create project
             </h3>
 
@@ -431,7 +431,7 @@ export default function DashboardPage() {
                   }
                   placeholder="My new project"
                   maxLength={100}
-                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
@@ -454,7 +454,7 @@ export default function DashboardPage() {
                   placeholder="Describe the project..."
                   maxLength={1000}
                   rows={4}
-                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none transition placeholder:text-zinc-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
@@ -476,7 +476,7 @@ export default function DashboardPage() {
         {dashboard && (
           <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-zinc-500">
+              <p className="text-sm font-medium text-zinc-700">
                 Projects
               </p>
 
@@ -486,7 +486,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="rounded-xl border bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-zinc-500">
+              <p className="text-sm font-medium text-zinc-700">
                 Total tasks
               </p>
 
@@ -496,7 +496,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="rounded-xl border bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-zinc-500">
+              <p className="text-sm font-medium text-zinc-700">
                 In progress
               </p>
 
@@ -506,7 +506,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="rounded-xl border bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-zinc-500">
+              <p className="text-sm font-medium text-zinc-700">
                 Completed
               </p>
 
@@ -521,7 +521,7 @@ export default function DashboardPage() {
           dashboard.totalTasks > 0 && (
             <div className="mb-10 grid gap-4 sm:grid-cols-3">
               <div className="rounded-xl border bg-white p-5 shadow-sm">
-                <p className="text-sm font-medium text-zinc-500">
+                <p className="text-sm font-medium text-zinc-700">
                   To do
                 </p>
 
@@ -531,7 +531,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="rounded-xl border border-red-100 bg-white p-5 shadow-sm">
-                <p className="text-sm font-medium text-zinc-500">
+                <p className="text-sm font-medium text-zinc-700">
                   Overdue
                 </p>
 
@@ -541,7 +541,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="rounded-xl border border-orange-100 bg-white p-5 shadow-sm">
-                <p className="text-sm font-medium text-zinc-500">
+                <p className="text-sm font-medium text-zinc-700">
                   High priority
                 </p>
 
@@ -553,11 +553,11 @@ export default function DashboardPage() {
           )}
 
         <div className="mb-8">
-          <h2 className="text-2xl font-bold">
+          <h2 className="text-2xl font-bold text-zinc-950">
             Your Projects
           </h2>
 
-          <p className="mt-2 text-zinc-500">
+          <p className="mt-2 text-zinc-700">
             Select a project to view and manage its tasks.
           </p>
         </div>
@@ -568,7 +568,7 @@ export default function DashboardPage() {
               No projects yet
             </h3>
 
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="mt-2 text-sm text-zinc-700">
               Create your first project to get started.
             </p>
           </div>
@@ -603,7 +603,7 @@ export default function DashboardPage() {
                     key={project.id}
                     className="rounded-xl border border-blue-200 bg-white p-6 shadow-sm"
                   >
-                    <h3 className="text-xl font-semibold">
+                    <h3 className="text-xl font-semibold text-zinc-950">
                       Edit project
                     </h3>
 
@@ -692,7 +692,7 @@ export default function DashboardPage() {
                   className="rounded-xl border bg-white p-6 shadow-sm transition hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <h3 className="text-xl font-semibold">
+                    <h3 className="text-xl font-semibold text-zinc-950">
                       {project.name}
                     </h3>
 
@@ -703,13 +703,13 @@ export default function DashboardPage() {
                     </span>
                   </div>
 
-                  <p className="mt-2 min-h-12 text-sm text-zinc-500">
+                  <p className="mt-2 min-h-12 text-sm text-zinc-700">
                     {project.description ||
                       'No project description provided.'}
                   </p>
 
                   <div className="mt-5">
-                    <div className="mb-2 flex items-center justify-between text-xs font-medium text-zinc-500">
+                    <div className="mb-2 flex items-center justify-between text-xs font-medium text-zinc-700">
                       <span>
                         Task progress
                       </span>
@@ -737,7 +737,7 @@ export default function DashboardPage() {
 
                     {projectProgress.totalTasks ===
                       0 && (
-                      <p className="mt-2 text-xs text-zinc-400">
+                      <p className="mt-2 text-xs text-zinc-600">
                         No tasks yet
                       </p>
                     )}

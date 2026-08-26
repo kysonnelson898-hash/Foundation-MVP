@@ -6,6 +6,8 @@ import {
   useState,
 } from 'react';
 
+import { io, Socket } from 'socket.io-client';
+
 import {
   Conversation,
   Message,
@@ -21,6 +23,10 @@ type User = {
   name: string | null;
   email: string;
 };
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
+  'http://localhost:3000';
 
 export default function ChatPage() {
   const [conversations, setConversations] =
@@ -89,16 +95,175 @@ export default function ChatPage() {
     loadData();
   }, []);
 
+  /*
+   * Real-time Socket.IO connection.
+   *
+   * The socket joins the currently selected
+   * conversation and listens for new messages.
+   */
+  useEffect(() => {
+    const token =
+      localStorage.getItem('accessToken');
+
+    if (!token) {
+      return;
+    }
+
+    const socket: Socket = io(API_URL, {
+      transports: ['websocket'],
+      auth: {
+        token,
+      },
+    });
+
+    function handleConnect() {
+      console.log(
+        'Connected to DevFlow real-time chat',
+      );
+
+      if (selectedConversation?.id) {
+        socket.emit(
+          'joinConversation',
+          selectedConversation.id,
+        );
+      }
+    }
+
+    function handleNewMessage(
+      message: Message,
+    ) {
+      if (!message?.conversationId) {
+        return;
+      }
+
+      /*
+       * If the message belongs to the currently
+       * selected conversation, add it immediately.
+       */
+      if (
+        message.conversationId ===
+        selectedConversation?.id
+      ) {
+        setMessages((current) => {
+          const alreadyExists =
+            current.some(
+              (item) =>
+                item.id === message.id,
+            );
+
+          if (alreadyExists) {
+            return current;
+          }
+
+          return [...current, message];
+        });
+
+        /*
+         * Mark incoming messages as read.
+         */
+        if (
+          message.senderId !==
+          currentUserId
+        ) {
+          markMessagesRead(
+            message.conversationId,
+          ).catch(() => {
+            // Ignore read-status errors.
+          });
+        }
+      }
+
+      /*
+       * Update the conversation preview and
+       * move the conversation to the top.
+       */
+      setConversations((current) => {
+        const existing =
+          current.find(
+            (conversation) =>
+              conversation.id ===
+              message.conversationId,
+          );
+
+        if (!existing) {
+          return current;
+        }
+
+        const updated: Conversation = {
+          ...existing,
+          updatedAt:
+            message.createdAt,
+          messages: [message],
+        };
+
+        return [
+          updated,
+          ...current.filter(
+            (conversation) =>
+              conversation.id !==
+              message.conversationId,
+          ),
+        ];
+      });
+    }
+
+    socket.on(
+      'connect',
+      handleConnect,
+    );
+
+    socket.on(
+      'newMessage',
+      handleNewMessage,
+    );
+
+    socket.on(
+      'connect_error',
+      (socketError) => {
+        console.error(
+          'Socket connection error:',
+          socketError.message,
+        );
+      },
+    );
+
+    if (selectedConversation?.id) {
+      socket.emit(
+        'joinConversation',
+        selectedConversation.id,
+      );
+    }
+
+    return () => {
+      socket.off(
+        'connect',
+        handleConnect,
+      );
+
+      socket.off(
+        'newMessage',
+        handleNewMessage,
+      );
+
+      socket.disconnect();
+    };
+  }, [
+    selectedConversation?.id,
+    currentUserId,
+  ]);
+
   async function loadData() {
     try {
       setLoading(true);
       setError('');
 
-      const [conversationData, userData] =
-        await Promise.all([
-          getConversations(),
-          getUsers(),
-        ]);
+      const [
+        conversationData,
+        userData,
+      ] = await Promise.all([
+        getConversations(),
+        getUsers(),
+      ]);
 
       setConversations(
         conversationData,
@@ -106,7 +271,9 @@ export default function ChatPage() {
 
       setUsers(userData);
 
-      if (conversationData.length > 0) {
+      if (
+        conversationData.length > 0
+      ) {
         await selectConversation(
           conversationData[0],
         );
@@ -123,10 +290,6 @@ export default function ChatPage() {
   }
 
   async function getUsers(): Promise<User[]> {
-    const API_URL =
-      process.env.NEXT_PUBLIC_API_URL ??
-      'http://localhost:3000';
-
     const token =
       localStorage.getItem('accessToken');
 
@@ -136,6 +299,7 @@ export default function ChatPage() {
         headers: {
           'Content-Type':
             'application/json',
+
           ...(token
             ? {
                 Authorization: `Bearer ${token}`,
@@ -261,10 +425,28 @@ export default function ChatPage() {
           messageText.trim(),
         );
 
-      setMessages((current) => [
-        ...current,
-        message,
-      ]);
+      /*
+       * Add the sent message immediately.
+       *
+       * The Socket.IO event will also arrive,
+       * but handleNewMessage prevents duplicates.
+       */
+      setMessages((current) => {
+        const alreadyExists =
+          current.some(
+            (item) =>
+              item.id === message.id,
+          );
+
+        if (alreadyExists) {
+          return current;
+        }
+
+        return [
+          ...current,
+          message,
+        ];
+      });
 
       setMessageText('');
 
@@ -331,6 +513,7 @@ export default function ChatPage() {
           </div>
 
           <button
+            type="button"
             onClick={() => {
               window.location.href =
                 '/';
@@ -358,6 +541,7 @@ export default function ChatPage() {
                 </div>
 
                 <button
+                  type="button"
                   onClick={() =>
                     setShowNewChat(
                       !showNewChat,
@@ -381,8 +565,7 @@ export default function ChatPage() {
                     }
                     onChange={(event) =>
                       setSelectedUserId(
-                        event.target
-                          .value,
+                        event.target.value,
                       )
                     }
                     className="mt-2 w-full rounded-lg border bg-white px-3 py-2 text-sm"
@@ -409,6 +592,7 @@ export default function ChatPage() {
                   </select>
 
                   <button
+                    type="button"
                     onClick={
                       handleCreateConversation
                     }
@@ -433,7 +617,8 @@ export default function ChatPage() {
                 0 ? (
                 <div className="p-5 text-sm text-zinc-500">
                   No conversations yet.
-                  Click <strong>+ New</strong>{' '}
+                  Click{' '}
+                  <strong>+ New</strong>{' '}
                   to start one.
                 </div>
               ) : (
@@ -451,6 +636,7 @@ export default function ChatPage() {
 
                       return (
                         <button
+                          type="button"
                           key={
                             conversation.id
                           }
@@ -561,6 +747,11 @@ export default function ChatPage() {
                           )?.email}
                         </p>
                       </div>
+
+                      <div className="ml-auto flex items-center gap-2 text-xs text-green-600">
+                        <span className="h-2 w-2 rounded-full bg-green-500" />
+                        Live
+                      </div>
                     </div>
                   </div>
 
@@ -639,8 +830,7 @@ export default function ChatPage() {
                         }
                         onChange={(event) =>
                           setMessageText(
-                            event.target
-                              .value,
+                            event.target.value,
                           )
                         }
                         placeholder="Type a message..."

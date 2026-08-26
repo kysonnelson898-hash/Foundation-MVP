@@ -5,11 +5,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SendMessageDto } from './dto/send-message.dto';
+import { MessagesGateway } from './messages.gateway';
 
 @Injectable()
 export class MessagesService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly messagesGateway: MessagesGateway,
   ) {}
 
   async getConversations(userId: string) {
@@ -207,6 +209,11 @@ export class MessagesService {
         updatedAt: new Date(),
       },
     });
+
+    this.messagesGateway.sendMessageToConversation(
+      conversationId,
+      message,
+    );
 
     return message;
   }
